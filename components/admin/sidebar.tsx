@@ -13,6 +13,7 @@ import {
   Ticket,
   RotateCcw,
   Settings,
+  Receipt,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -29,6 +30,7 @@ const navItems = [
   { label: "Reviews", href: "/studio/reviews", icon: Star },
   { label: "Coupons", href: "/studio/coupons", icon: Ticket },
   { label: "Returns", href: "/studio/returns", icon: RotateCcw },
+  { label: "Billing", href: "/studio/billing", icon: Receipt },
   { label: "Settings", href: "/studio/settings", icon: Settings },
 ];
 

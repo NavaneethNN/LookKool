@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { products, productVariants, productImages, categories } from "@/db/schema";
 import { eq, and, or, ilike, sql, desc } from "drizzle-orm";
 import { SearchContent } from "./search-content";
+import { getTrendingProducts, getPopularProducts } from "@/lib/actions/recommendation-actions";
 
 // Disable caching for search (depends on query params)
 export const dynamic = "force-dynamic";
@@ -117,6 +118,16 @@ export default async function SearchPage({ searchParams }: PageProps) {
     }));
   }
 
+  // Fetch recommendations when no query or no results
+  const needsRecs = !q.trim() || productList.length === 0;
+  const [trendingProducts, popularProducts] = needsRecs
+    ? await Promise.all([getTrendingProducts(10), getPopularProducts(10)])
+    : [[], []];
+
+  // Deduplicate popular against trending
+  const trendingIds = new Set(trendingProducts.map((p) => p.productId));
+  const dedupedPopular = popularProducts.filter((p) => !trendingIds.has(p.productId));
+
   return (
     <main className="container mx-auto px-4 py-8">
       <SearchContent
@@ -124,6 +135,8 @@ export default async function SearchPage({ searchParams }: PageProps) {
         initialCategory={category || ""}
         categories={allCategories}
         products={productList}
+        trendingProducts={trendingProducts}
+        popularProducts={dedupedPopular}
       />
     </main>
   );

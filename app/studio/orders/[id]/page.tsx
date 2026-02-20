@@ -4,7 +4,7 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { OrderActions } from "@/components/admin/order-actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import Image from "next/image";
 
 export default async function OrderDetailPage({
@@ -32,9 +32,18 @@ export default async function OrderDetailPage({
         title={`Order #${order.orderId}`}
         description={`Placed on ${new Date(order.orderDate).toLocaleString("en-IN", { dateStyle: "long", timeStyle: "short" })}`}
       >
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <StatusBadge status={order.status} />
           <StatusBadge status={order.paymentStatus} />
+          <a
+            href={`/api/invoice/${order.orderId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#470B49] text-white hover:bg-[#5c1060] transition-colors ml-2"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            Invoice
+          </a>
         </div>
       </PageHeader>
 

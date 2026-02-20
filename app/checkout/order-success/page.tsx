@@ -6,13 +6,23 @@ import { CheckCircle2, Package, ArrowRight, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import dynamic from "next/dynamic";
+
+const OrderSuccessRecommendations = dynamic(
+  () =>
+    import("@/components/product/order-success-recommendations").then(
+      (mod) => mod.OrderSuccessRecommendations
+    ),
+  { ssr: false }
+);
 
 export default function OrderSuccessPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
 
   return (
-    <div className="container mx-auto px-4 py-12 sm:py-20 max-w-lg">
+    <div className="py-12 sm:py-20">
+      <div className="container mx-auto px-4 max-w-lg">
       <Card>
         <CardContent className="pt-8 pb-8 text-center space-y-5">
           {/* Animated success icon */}
@@ -67,6 +77,12 @@ export default function OrderSuccessPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
+
+      {/* Recommendations */}
+      <div className="mt-12">
+        <OrderSuccessRecommendations />
+      </div>
     </div>
   );
 }

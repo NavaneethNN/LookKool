@@ -1,7 +1,12 @@
 import {
   getDeliverySettings,
   getNewsletterSubscribers,
+  getStoreSettings,
 } from "@/lib/actions/admin-actions";
+import { db } from "@/db";
+import { categories } from "@/db/schema";
+import { eq, asc } from "drizzle-orm";
+import { getPublicSiteConfig } from "@/lib/site-config";
 import { PageHeader } from "@/components/admin/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -14,12 +19,26 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DeliverySettingForm } from "@/components/admin/delivery-setting-form";
+import { StoreSettingsForm } from "@/components/admin/store-settings-form";
+import { SiteAppearanceForm } from "@/components/admin/site-appearance-form";
 
 export default async function SettingsPage() {
-  const [settings, subscribers] = await Promise.all([
-    getDeliverySettings(),
-    getNewsletterSubscribers(),
-  ]);
+  const [settings, subscribers, storeSettings, allCategories, siteConfig] =
+    await Promise.all([
+      getDeliverySettings(),
+      getNewsletterSubscribers(),
+      getStoreSettings(),
+      db
+        .select({
+          categoryId: categories.categoryId,
+          categoryName: categories.categoryName,
+          slug: categories.slug,
+        })
+        .from(categories)
+        .where(eq(categories.isActive, true))
+        .orderBy(asc(categories.sortOrder)),
+      getPublicSiteConfig(),
+    ]);
 
   return (
     <>
@@ -28,13 +47,40 @@ export default async function SettingsPage() {
         description="Store configuration & data"
       />
 
-      <Tabs defaultValue="delivery" className="w-full">
+      <Tabs defaultValue="appearance" className="w-full">
         <TabsList className="mb-6">
+          <TabsTrigger value="appearance">Site &amp; Appearance</TabsTrigger>
+          <TabsTrigger value="store">Store &amp; Billing</TabsTrigger>
           <TabsTrigger value="delivery">Delivery Settings</TabsTrigger>
           <TabsTrigger value="newsletter">
             Newsletter ({subscribers.length})
           </TabsTrigger>
         </TabsList>
+
+        {/* ── Site & Appearance ─────────────────────────── */}
+        <TabsContent value="appearance">
+          <SiteAppearanceForm
+            settings={{
+              siteLogoUrl: siteConfig.siteLogoUrl ?? "",
+              sitePrimaryColor: siteConfig.sitePrimaryColor,
+              siteDescription: siteConfig.siteDescription ?? "",
+              footerTagline: siteConfig.footerTagline ?? "",
+              navLinksConfig: siteConfig.navLinksConfig,
+              footerQuickLinks: siteConfig.footerQuickLinks,
+              footerHelpLinks: siteConfig.footerHelpLinks,
+              footerLegalLinks: siteConfig.footerLegalLinks,
+              footerContactPhone: siteConfig.footerContactPhone ?? "",
+              footerContactEmail: siteConfig.footerContactEmail ?? "",
+              footerShowMadeInIndia: siteConfig.footerShowMadeInIndia,
+            }}
+            categories={allCategories}
+          />
+        </TabsContent>
+
+        {/* ── Store & Billing Settings ──────────────── */}
+        <TabsContent value="store">
+          <StoreSettingsForm settings={storeSettings} />
+        </TabsContent>
 
         {/* ── Delivery Settings ─────────────────────── */}
         <TabsContent value="delivery">

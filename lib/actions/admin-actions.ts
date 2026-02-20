@@ -9,11 +9,14 @@ import {
   productVariants,
   productImages,
   orders,
+  orderItems,
   returnRequests,
   reviews,
   coupons,
   newsletter,
   deliverySettings,
+  storeSettings,
+  inStoreBills,
 } from "@/db/schema";
 import { eq, desc, asc, sql, count, sum, and, gte, ilike, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -275,6 +278,8 @@ export async function getAdminProducts(params?: {
   search?: string;
   categoryId?: number;
   active?: boolean;
+  sort?: string;
+  order?: "asc" | "desc";
 }) {
   await requireAdmin();
 
@@ -298,15 +303,37 @@ export async function getAdminProducts(params?: {
     conditions.push(eq(products.isActive, params.active));
   }
 
+  // Determine sort order
+  const sortField = params?.sort ?? "priority";
+  const sortDir = params?.order ?? "asc";
+  const orderClauses = [];
+  const sortMap: Record<string, any> = {
+    name: products.productName,
+    price: products.basePrice,
+    date: products.createdAt,
+    priority: products.priority,
+    code: products.productCode,
+  };
+  const col = sortMap[sortField] ?? products.priority;
+  orderClauses.push(sortDir === "desc" ? desc(col) : asc(col));
+  if (sortField !== "date") orderClauses.push(desc(products.createdAt));
+
   const allProducts = await db.query.products.findMany({
     where: conditions.length > 0 ? and(...conditions) : undefined,
-    orderBy: [asc(products.priority), desc(products.createdAt)],
+    orderBy: orderClauses,
     limit,
     offset,
     with: {
       category: { columns: { categoryName: true } },
       variants: {
         columns: { variantId: true, color: true, size: true, stockCount: true },
+        with: {
+          images: {
+            where: eq(productImages.isPrimary, true),
+            limit: 1,
+            columns: { imagePath: true },
+          },
+        },
       },
     },
   });
@@ -627,6 +654,183 @@ export async function setVariantPrimaryImage(
 
   revalidatePath("/studio/products");
   return { success: true };
+}
+
+// ── Bulk Product Operations ────────────────────────────────────
+
+export async function bulkDeleteProducts(productIds: number[]) {
+  await requireAdmin();
+
+  if (productIds.length === 0) return { success: true, deleted: 0 };
+
+  for (const id of productIds) {
+    await db.delete(products).where(eq(products.productId, id));
+  }
+
+  revalidatePath("/studio/products");
+  return { success: true, deleted: productIds.length };
+}
+
+export async function bulkToggleProductsActive(
+  productIds: number[],
+  isActive: boolean
+) {
+  await requireAdmin();
+
+  if (productIds.length === 0) return { success: true, updated: 0 };
+
+  for (const id of productIds) {
+    await db
+      .update(products)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(products.productId, id));
+  }
+
+  revalidatePath("/studio/products");
+  return { success: true, updated: productIds.length };
+}
+
+export async function bulkUpdateProductCategory(
+  productIds: number[],
+  categoryId: number
+) {
+  await requireAdmin();
+
+  for (const id of productIds) {
+    await db
+      .update(products)
+      .set({ categoryId, updatedAt: new Date() })
+      .where(eq(products.productId, id));
+  }
+
+  revalidatePath("/studio/products");
+  return { success: true, updated: productIds.length };
+}
+
+export async function duplicateProduct(productId: number) {
+  await requireAdmin();
+
+  const original = await db.query.products.findFirst({
+    where: eq(products.productId, productId),
+    with: {
+      variants: {
+        with: { images: true },
+      },
+    },
+  });
+
+  if (!original) throw new Error("Product not found");
+
+  // Create new product with "(Copy)" suffix
+  const [newProduct] = await db
+    .insert(products)
+    .values({
+      productName: `${original.productName} (Copy)`,
+      slug: `${original.slug}-copy-${Date.now()}`,
+      description: original.description,
+      categoryId: original.categoryId,
+      basePrice: original.basePrice,
+      mrp: original.mrp,
+      productCode: `${original.productCode}-COPY`,
+      material: original.material,
+      fabricWeight: original.fabricWeight,
+      careInstructions: original.careInstructions,
+      origin: original.origin,
+      detailHtml: original.detailHtml,
+      label: original.label,
+      isActive: false, // Start as inactive
+      priority: original.priority,
+    })
+    .returning();
+
+  // Duplicate variants and their images
+  for (const variant of original.variants) {
+    const [newVariant] = await db
+      .insert(productVariants)
+      .values({
+        productId: newProduct.productId,
+        sku: variant.sku ? `${variant.sku}-COPY` : null,
+        color: variant.color,
+        hexcode: variant.hexcode,
+        size: variant.size,
+        stockCount: 0, // Start with 0 stock
+        priceModifier: variant.priceModifier,
+      })
+      .returning();
+
+    // Duplicate images (reuse same image paths)
+    for (const img of variant.images) {
+      await db.insert(productImages).values({
+        variantId: newVariant.variantId,
+        imagePath: img.imagePath,
+        altText: img.altText,
+        sortOrder: img.sortOrder,
+        isPrimary: img.isPrimary,
+      });
+    }
+  }
+
+  revalidatePath("/studio/products");
+  return newProduct;
+}
+
+export async function getProductStockSummary(productId: number) {
+  await requireAdmin();
+
+  const variants = await db
+    .select({
+      variantId: productVariants.variantId,
+      color: productVariants.color,
+      size: productVariants.size,
+      stockCount: productVariants.stockCount,
+      sku: productVariants.sku,
+    })
+    .from(productVariants)
+    .where(eq(productVariants.productId, productId));
+
+  const totalStock = variants.reduce((sum, v) => sum + v.stockCount, 0);
+  const outOfStock = variants.filter((v) => v.stockCount === 0).length;
+  const lowStock = variants.filter(
+    (v) => v.stockCount > 0 && v.stockCount <= 5
+  ).length;
+
+  return {
+    variants,
+    totalStock,
+    outOfStock,
+    lowStock,
+    totalVariants: variants.length,
+  };
+}
+
+export async function getLowStockProducts(threshold: number = 5) {
+  await requireAdmin();
+
+  const allProducts = await db.query.products.findMany({
+    where: eq(products.isActive, true),
+    with: {
+      category: { columns: { categoryName: true } },
+      variants: {
+        columns: { variantId: true, color: true, size: true, stockCount: true, sku: true },
+      },
+    },
+    orderBy: [asc(products.productName)],
+  });
+
+  return allProducts
+    .filter((p) =>
+      p.variants.some((v) => v.stockCount <= threshold)
+    )
+    .map((p) => ({
+      productId: p.productId,
+      productName: p.productName,
+      productCode: p.productCode,
+      category: p.category?.categoryName ?? "—",
+      variants: p.variants.filter((v) => v.stockCount <= threshold),
+      totalVariants: p.variants.length,
+      lowStockCount: p.variants.filter((v) => v.stockCount > 0 && v.stockCount <= threshold).length,
+      outOfStockCount: p.variants.filter((v) => v.stockCount === 0).length,
+    }));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1127,4 +1331,385 @@ export async function upsertDeliverySetting(data: {
 
   revalidatePath("/studio/settings");
   return { success: true };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STORE SETTINGS (Billing / GST)
+// ═══════════════════════════════════════════════════════════════
+
+export async function getStoreSettings() {
+  await requireAdmin();
+
+  const [settings] = await db.select().from(storeSettings).limit(1);
+  return settings ?? null;
+}
+
+export async function upsertStoreSettings(data: {
+  businessName: string;
+  businessTagline?: string;
+  gstin?: string;
+  pan?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  stateCode: string;
+  pincode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  gstRate: string;
+  hsnCode: string;
+  enableGst: boolean;
+  invoicePrefix: string;
+  nextInvoiceNumber?: number;
+  invoiceTerms?: string;
+  invoiceNotes?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankBranch?: string;
+  upiId?: string;
+  // Bill layout customization
+  billPaperSize?: string;
+  billAccentColor?: string;
+  billTitle?: string;
+  billHeaderText?: string;
+  billFooterText?: string;
+  billGreeting?: string;
+  billLogoUrl?: string;
+  billShowLogo?: boolean;
+  billShowHsn?: boolean;
+  billShowSku?: boolean;
+  billShowGstSummary?: boolean;
+  billShowBankDetails?: boolean;
+  billShowSignatory?: boolean;
+  billShowAmountWords?: boolean;
+  billShowCustomerSection?: boolean;
+  billFontScale?: string;
+  billExtraConfig?: Record<string, unknown>;
+}) {
+  await requireAdmin();
+
+  const nullableFields = {
+    businessTagline: data.businessTagline || null,
+    gstin: data.gstin || null,
+    pan: data.pan || null,
+    addressLine1: data.addressLine1 || null,
+    addressLine2: data.addressLine2 || null,
+    pincode: data.pincode || null,
+    country: data.country || "India",
+    phone: data.phone || null,
+    email: data.email || null,
+    website: data.website || null,
+    invoiceTerms: data.invoiceTerms || null,
+    invoiceNotes: data.invoiceNotes || null,
+    bankName: data.bankName || null,
+    bankAccountNumber: data.bankAccountNumber || null,
+    bankIfsc: data.bankIfsc || null,
+    bankBranch: data.bankBranch || null,
+    upiId: data.upiId || null,
+    billHeaderText: data.billHeaderText || null,
+    billFooterText: data.billFooterText || null,
+    billGreeting: data.billGreeting || null,
+    billLogoUrl: data.billLogoUrl || null,
+    billExtraConfig: data.billExtraConfig || null,
+  };
+
+  const [existing] = await db.select({ settingId: storeSettings.settingId }).from(storeSettings).limit(1);
+
+  if (existing) {
+    await db
+      .update(storeSettings)
+      .set({
+        ...data,
+        ...nullableFields,
+        nextInvoiceNumber: data.nextInvoiceNumber ?? undefined,
+        updatedAt: new Date(),
+      })
+      .where(eq(storeSettings.settingId, existing.settingId));
+  } else {
+    await db.insert(storeSettings).values({
+      ...data,
+      ...nullableFields,
+      nextInvoiceNumber: data.nextInvoiceNumber ?? 1,
+    });
+  }
+
+  revalidatePath("/studio/settings");
+  return { success: true };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BILLING (In-Store POS)
+// ═══════════════════════════════════════════════════════════════
+
+export async function searchProductsForBilling(query: string) {
+  await requireAdmin();
+
+  if (!query || query.length < 2) return [];
+
+  const results = await db.query.products.findMany({
+    where: and(
+      eq(products.isActive, true),
+      or(
+        ilike(products.productName, `%${query}%`),
+        ilike(products.productCode, `%${query}%`)
+      )
+    ),
+    limit: 10,
+    with: {
+      variants: {
+        columns: {
+          variantId: true,
+          color: true,
+          size: true,
+          stockCount: true,
+          sku: true,
+          priceModifier: true,
+        },
+      },
+    },
+  });
+
+  return results.map((p) => ({
+    productId: p.productId,
+    productName: p.productName,
+    productCode: p.productCode,
+    basePrice: p.basePrice,
+    mrp: p.mrp,
+    variants: p.variants,
+  }));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SITE APPEARANCE
+// ═══════════════════════════════════════════════════════════════
+
+export async function upsertSiteAppearance(data: {
+  siteLogoUrl?: string | null;
+  sitePrimaryColor?: string;
+  siteDescription?: string | null;
+  footerTagline?: string | null;
+  navLinksConfig?: { label: string; href: string; enabled: boolean }[] | null;
+  footerQuickLinks?: { label: string; href: string }[] | null;
+  footerHelpLinks?: { label: string; href: string }[] | null;
+  footerLegalLinks?: { label: string; href: string }[] | null;
+  footerContactPhone?: string | null;
+  footerContactEmail?: string | null;
+  footerShowMadeInIndia?: boolean;
+}) {
+  await requireAdmin();
+
+  const payload = {
+    siteLogoUrl: data.siteLogoUrl || null,
+    sitePrimaryColor: data.sitePrimaryColor || "#470B49",
+    siteDescription: data.siteDescription || null,
+    footerTagline: data.footerTagline || null,
+    navLinksConfig: data.navLinksConfig ?? null,
+    footerQuickLinks: data.footerQuickLinks ?? null,
+    footerHelpLinks: data.footerHelpLinks ?? null,
+    footerLegalLinks: data.footerLegalLinks ?? null,
+    footerContactPhone: data.footerContactPhone || null,
+    footerContactEmail: data.footerContactEmail || null,
+    footerShowMadeInIndia: data.footerShowMadeInIndia ?? true,
+    updatedAt: new Date(),
+  };
+
+  const [existing] = await db
+    .select({ settingId: storeSettings.settingId })
+    .from(storeSettings)
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(storeSettings)
+      .set(payload)
+      .where(eq(storeSettings.settingId, existing.settingId));
+  } else {
+    // Create a minimal row if none exists yet
+    await db.insert(storeSettings).values({
+      businessName: "LookKool",
+      city: "",
+      state: "Tamil Nadu",
+      stateCode: "33",
+      gstRate: "5.00",
+      hsnCode: "6104",
+      enableGst: true,
+      invoicePrefix: "LK",
+      ...payload,
+    });
+  }
+
+  // Revalidate storefront and admin settings
+  revalidatePath("/", "layout");
+  revalidatePath("/studio/settings");
+  return { success: true };
+}
+
+export async function generateInvoiceNumber() {
+  await requireAdmin();
+
+  const [settings] = await db.select().from(storeSettings).limit(1);
+  const prefix = settings?.invoicePrefix ?? "LK";
+  const nextNum = settings?.nextInvoiceNumber ?? 1;
+
+  const invoiceNumber = `${prefix}-${String(nextNum).padStart(6, "0")}`;
+
+  // Increment the counter
+  if (settings) {
+    await db
+      .update(storeSettings)
+      .set({ nextInvoiceNumber: nextNum + 1, updatedAt: new Date() })
+      .where(eq(storeSettings.settingId, settings.settingId));
+  }
+
+  return invoiceNumber;
+}
+
+export async function createInStoreBill(data: {
+  customerName?: string;
+  customerPhone?: string;
+  customerGstin?: string;
+  subtotal: string;
+  discountAmount: string;
+  taxableAmount: string;
+  cgstRate: string;
+  cgstAmount: string;
+  sgstRate: string;
+  sgstAmount: string;
+  igstRate: string;
+  igstAmount: string;
+  roundOff: string;
+  totalAmount: string;
+  paymentMode: string;
+  items: string; // JSON string of line items
+  notes?: string;
+}) {
+  const admin = await requireAdmin();
+
+  const invoiceNumber = await generateInvoiceNumber();
+
+  const [bill] = await db
+    .insert(inStoreBills)
+    .values({
+      invoiceNumber,
+      customerName: data.customerName || null,
+      customerPhone: data.customerPhone || null,
+      customerGstin: data.customerGstin || null,
+      subtotal: data.subtotal,
+      discountAmount: data.discountAmount,
+      taxableAmount: data.taxableAmount,
+      cgstRate: data.cgstRate,
+      cgstAmount: data.cgstAmount,
+      sgstRate: data.sgstRate,
+      sgstAmount: data.sgstAmount,
+      igstRate: data.igstRate,
+      igstAmount: data.igstAmount,
+      roundOff: data.roundOff,
+      totalAmount: data.totalAmount,
+      paymentMode: data.paymentMode,
+      items: data.items,
+      createdBy: admin.email,
+      notes: data.notes || null,
+    })
+    .returning();
+
+  // Deduct stock for each sold item
+  try {
+    const items = JSON.parse(data.items) as Array<{ variantId?: number; quantity: number }>;
+    for (const item of items) {
+      if (item.variantId) {
+        await db
+          .update(productVariants)
+          .set({
+            stockCount: sql`GREATEST(${productVariants.stockCount} - ${item.quantity}, 0)`,
+            updatedAt: new Date(),
+          })
+          .where(eq(productVariants.variantId, item.variantId));
+      }
+    }
+  } catch {
+    console.error("Failed to deduct stock for in-store bill");
+  }
+
+  revalidatePath("/studio/billing");
+  return bill;
+}
+
+export async function getInStoreBills(params?: { page?: number; search?: string }) {
+  await requireAdmin();
+
+  const page = params?.page ?? 1;
+  const limit = 20;
+  const offset = (page - 1) * limit;
+
+  const conditions = [];
+  if (params?.search) {
+    conditions.push(
+      or(
+        ilike(inStoreBills.invoiceNumber, `%${params.search}%`),
+        ilike(inStoreBills.customerName, `%${params.search}%`),
+        ilike(inStoreBills.customerPhone, `%${params.search}%`)
+      )
+    );
+  }
+
+  const bills = await db
+    .select()
+    .from(inStoreBills)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(inStoreBills.billDate))
+    .limit(limit)
+    .offset(offset);
+
+  const [totalResult] = await db
+    .select({ count: count() })
+    .from(inStoreBills)
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+  return {
+    bills,
+    total: totalResult?.count ?? 0,
+    page,
+    totalPages: Math.ceil((totalResult?.count ?? 0) / limit),
+  };
+}
+
+export async function getInStoreBill(billId: number) {
+  await requireAdmin();
+
+  const [bill] = await db
+    .select()
+    .from(inStoreBills)
+    .where(eq(inStoreBills.billId, billId))
+    .limit(1);
+
+  return bill ?? null;
+}
+
+// Get invoice data for online orders (for PDF generation)
+export async function getOrderInvoiceData(orderId: number) {
+  await requireAdmin();
+
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.orderId, orderId),
+    with: {
+      user: {
+        columns: { name: true, email: true, phoneNumber: true },
+      },
+      items: {
+        with: {
+          variant: {
+            columns: { sku: true },
+          },
+        },
+      },
+    },
+  });
+
+  const [settings] = await db.select().from(storeSettings).limit(1);
+
+  return { order, storeSettings: settings ?? null };
 }

@@ -1,0 +1,104 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getInStoreBill, getStoreSettings } from "@/lib/actions/admin-actions";
+import { generateInvoiceHTML, buildLayoutConfig, type InvoiceData } from "@/lib/invoice-template";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { billId: string } }
+) {
+  try {
+    const billId = Number(params.billId);
+    if (isNaN(billId)) {
+      return NextResponse.json({ error: "Invalid bill ID" }, { status: 400 });
+    }
+
+    const bill = await getInStoreBill(billId);
+    if (!bill) {
+      return NextResponse.json({ error: "Bill not found" }, { status: 404 });
+    }
+
+    const settings = await getStoreSettings();
+    const layout = buildLayoutConfig(settings as unknown as Record<string, unknown>);
+
+    const store = {
+      businessName: settings?.businessName ?? "LookKool",
+      businessTagline: settings?.businessTagline,
+      gstin: settings?.gstin,
+      pan: settings?.pan,
+      addressLine1: settings?.addressLine1,
+      addressLine2: settings?.addressLine2,
+      city: settings?.city ?? "Chennai",
+      state: settings?.state ?? "Tamil Nadu",
+      stateCode: settings?.stateCode ?? "33",
+      pincode: settings?.pincode,
+      phone: settings?.phone,
+      email: settings?.email,
+      website: settings?.website,
+      hsnCode: settings?.hsnCode ?? "6104",
+      enableGst: settings?.enableGst ?? true,
+      invoiceTerms: settings?.invoiceTerms,
+      invoiceNotes: settings?.invoiceNotes,
+      bankName: settings?.bankName,
+      bankAccountNumber: settings?.bankAccountNumber,
+      bankIfsc: settings?.bankIfsc,
+      bankBranch: settings?.bankBranch,
+      upiId: settings?.upiId,
+    };
+
+    let items: InvoiceData["items"] = [];
+    try {
+      const parsed = JSON.parse(bill.items);
+      items = parsed.map((item: Record<string, unknown>) => ({
+        name: String(item.productName || item.name || "Item"),
+        variant: item.variant ? String(item.variant) : undefined,
+        sku: item.sku ? String(item.sku) : null,
+        hsn: String(item.hsn || store.hsnCode),
+        quantity: Number(item.quantity) || 1,
+        rate: Number(item.rate || item.price) || 0,
+        amount: Number(item.amount || item.total) || 0,
+      }));
+    } catch {
+      items = [{ name: "Items", hsn: store.hsnCode, quantity: 1, rate: Number(bill.subtotal), amount: Number(bill.subtotal) }];
+    }
+
+    const invoiceDate = new Date(bill.billDate).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+    const html = generateInvoiceHTML({
+      layout,
+      store,
+      invoiceNumber: bill.invoiceNumber,
+      invoiceDate,
+      type: "in_store",
+      customer: {
+        name: bill.customerName || "Walk-in Customer",
+        phone: bill.customerPhone,
+        gstin: bill.customerGstin,
+      },
+      items,
+      subtotal: Number(bill.subtotal),
+      discount: Number(bill.discountAmount),
+      deliveryCharge: 0,
+      taxableAmount: Number(bill.taxableAmount),
+      cgstRate: Number(bill.cgstRate),
+      cgstAmount: Number(bill.cgstAmount),
+      sgstRate: Number(bill.sgstRate),
+      sgstAmount: Number(bill.sgstAmount),
+      igstRate: Number(bill.igstRate),
+      igstAmount: Number(bill.igstAmount),
+      roundOff: Number(bill.roundOff),
+      total: Number(bill.totalAmount),
+      paymentMethod: bill.paymentMode,
+    });
+
+    return new NextResponse(html, {
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  } catch (error) {
+    console.error("Bill invoice generation failed:", error);
+    return NextResponse.json({ error: "Failed to generate invoice" }, { status: 500 });
+  }
+}

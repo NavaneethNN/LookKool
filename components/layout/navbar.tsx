@@ -7,16 +7,17 @@ import { useState, useEffect } from "react";
 import { Menu, X, ShoppingBag, Heart, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { siteConfig, navLinks } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { useWishlistStore } from "@/lib/stores/wishlist-store";
+import type { PublicSiteConfig } from "@/lib/site-config";
 
 interface NavbarProps {
   user: { id: string; email?: string } | null;
+  siteConfig: PublicSiteConfig;
 }
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ user, siteConfig }: NavbarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const cartCount = useCartStore((s) => s.itemCount());
@@ -24,14 +25,18 @@ export function Navbar({ user }: NavbarProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const logoSrc = siteConfig.siteLogoUrl || "/NewLogo.png";
+  const siteName = siteConfig.businessName;
+  const navLinks = siteConfig.navLinksConfig.filter((l) => l.enabled);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src={siteConfig.logo}
-            alt={siteConfig.name}
+            src={logoSrc}
+            alt={siteName}
             width={120}
             height={40}
             className="h-9 w-auto"
@@ -120,8 +125,8 @@ export function Navbar({ user }: NavbarProps) {
                 {/* Mobile Header */}
                 <div className="flex items-center justify-between border-b px-4 py-4">
                   <Image
-                    src={siteConfig.logo}
-                    alt={siteConfig.name}
+                    src={logoSrc}
+                    alt={siteName}
                     width={100}
                     height={34}
                     className="h-8 w-auto"

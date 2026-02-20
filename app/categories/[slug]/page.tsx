@@ -5,6 +5,10 @@ import { categories, products, productVariants, productImages } from "@/db/schem
 import { eq, and, asc, desc, sql } from "drizzle-orm";
 import { ProductGrid } from "./product-grid";
 import { SlidersHorizontal } from "lucide-react";
+import { getPopularInCategory, getTrendingProducts } from "@/lib/actions/recommendation-actions";
+import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
+import { RecentlyViewed } from "@/components/product/recently-viewed";
+import { TrendingUp, Star } from "lucide-react";
 
 // Revalidate category pages every 60 seconds
 export const revalidate = 60;
@@ -182,6 +186,12 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           sort={sort}
         />
       )}
+
+      {/* Recommendations */}
+      <CategoryRecommendations
+        categoryId={category.categoryId}
+        productIds={productIds}
+      />
     </main>
   );
 }
@@ -251,6 +261,50 @@ function Pagination({
           Next
         </a>
       )}
+    </div>
+  );
+}
+
+async function CategoryRecommendations({
+  categoryId,
+  productIds,
+}: {
+  categoryId: number;
+  productIds: number[];
+}) {
+  const [popularInCat, trending] = await Promise.all([
+    getPopularInCategory(categoryId, productIds, 10),
+    getTrendingProducts(10),
+  ]);
+
+  // Deduplicate trending against already-shown products and popular-in-category
+  const shownIds = new Set([
+    ...productIds,
+    ...popularInCat.map((p) => p.productId),
+  ]);
+  const filteredTrending = trending.filter((p) => !shownIds.has(p.productId));
+
+  const hasRecs = popularInCat.length > 0 || filteredTrending.length > 0;
+  if (!hasRecs) return null;
+
+  return (
+    <div className="mt-12 space-y-2">
+      <ProductRecommendationStrip
+        title="More From This Category"
+        icon={<Star className="h-5 w-5" />}
+        subtitle="Explore similar styles"
+        products={popularInCat}
+        layout="scroll"
+        variant="muted"
+      />
+      <ProductRecommendationStrip
+        title="Trending Across Store"
+        icon={<TrendingUp className="h-5 w-5" />}
+        products={filteredTrending}
+        layout="scroll"
+        variant="accent"
+      />
+      <RecentlyViewed excludeIds={productIds} />
     </div>
   );
 }

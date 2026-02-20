@@ -1,5 +1,14 @@
 import { Metadata } from "next";
 import { WishlistContent } from "./wishlist-content";
+import dynamic from "next/dynamic";
+
+const WishlistRecommendations = dynamic(
+  () =>
+    import("@/components/product/wishlist-recommendations").then(
+      (mod) => mod.WishlistRecommendations
+    ),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: "Wishlist – LookKool",
@@ -11,6 +20,7 @@ export default function WishlistPage() {
     <main className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold sm:text-3xl mb-8">My Wishlist</h1>
       <WishlistContent />
+      <WishlistRecommendations />
     </main>
   );
 }

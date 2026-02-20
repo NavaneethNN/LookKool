@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X, TrendingUp, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product/product-card";
 import { PackageOpen } from "lucide-react";
+import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
 
 interface Category {
   categoryId: number;
@@ -24,11 +25,25 @@ interface Product {
   image: string;
 }
 
+type RecommendedProduct = {
+  productId: number;
+  productName: string;
+  slug: string;
+  basePrice: number;
+  mrp: number;
+  label: string | null;
+  image: string;
+  rating?: number;
+  reviewCount?: number;
+};
+
 interface SearchContentProps {
   initialQuery: string;
   initialCategory: string;
   categories: Category[];
   products: Product[];
+  trendingProducts?: RecommendedProduct[];
+  popularProducts?: RecommendedProduct[];
 }
 
 export function SearchContent({
@@ -36,6 +51,8 @@ export function SearchContent({
   initialCategory,
   categories,
   products,
+  trendingProducts = [],
+  popularProducts = [],
 }: SearchContentProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -165,30 +182,64 @@ export function SearchContent({
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                <PackageOpen className="h-8 w-8 text-muted-foreground" />
+            <div className="space-y-8">
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+                  <PackageOpen className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">No results found</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Try adjusting your search or removing filters.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold">No results found</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Try adjusting your search or removing filters.
-                </p>
-              </div>
+              <ProductRecommendationStrip
+                title="Trending Now"
+                icon={<TrendingUp className="h-5 w-5" />}
+                subtitle="Check out what others are buying"
+                products={trendingProducts}
+                layout="scroll"
+                variant="accent"
+              />
+              <ProductRecommendationStrip
+                title="Popular Products"
+                icon={<Star className="h-5 w-5" />}
+                products={popularProducts}
+                layout="scroll"
+                variant="muted"
+              />
             </div>
           )}
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-            <Search className="h-8 w-8 text-muted-foreground" />
+        <div className="space-y-8">
+          <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">Search LookKool</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Find your perfect outfit by searching for products.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold">Search LookKool</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Find your perfect outfit by searching for products.
-            </p>
-          </div>
+          <ProductRecommendationStrip
+            title="Trending Now"
+            icon={<TrendingUp className="h-5 w-5" />}
+            subtitle="Discover what's hot right now"
+            products={trendingProducts}
+            layout="scroll"
+            variant="accent"
+          />
+          <ProductRecommendationStrip
+            title="Popular Products"
+            icon={<Star className="h-5 w-5" />}
+            products={popularProducts}
+            layout="scroll"
+            variant="muted"
+          />
         </div>
       )}
     </div>

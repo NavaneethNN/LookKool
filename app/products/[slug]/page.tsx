@@ -12,6 +12,15 @@ import { eq, and, desc, avg, count } from "drizzle-orm";
 import { ProductDetail } from "./product-detail";
 import { ProductJsonLd } from "@/components/seo/product-jsonld";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getSimilarProducts,
+  getFrequentlyBoughtTogether,
+  getTrendingProducts,
+} from "@/lib/actions/recommendation-actions";
+import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
+import { RecentlyViewed } from "@/components/product/recently-viewed";
+import { TrackProductView } from "@/components/product/track-product-view";
+import { Sparkles, ShoppingBag, TrendingUp } from "lucide-react";
 
 // Revalidate product pages every 60 seconds
 export const revalidate = 60;
@@ -127,8 +136,24 @@ export default async function ProductPage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Fetch recommendations in parallel
+  const [similarProducts, boughtTogether, trendingProducts] =
+    await Promise.all([
+      getSimilarProducts(product.productId, product.categoryId, 8),
+      getFrequentlyBoughtTogether([product.productId], 6),
+      getTrendingProducts(8),
+    ]);
+
+  // Filter trending to exclude current product and similar products
+  const similarIds = new Set(similarProducts.map((p) => p.productId));
+  const filteredTrending = trendingProducts.filter(
+    (p) => p.productId !== product.productId && !similarIds.has(p.productId)
+  );
+
   return (
     <main className="container mx-auto px-4 py-8">
+      {/* Track this product view for "Recently Viewed" */}
+      <TrackProductView productId={product.productId} />
       {/* JSON-LD Structured Data */}
       <ProductJsonLd
         name={product.productName}
@@ -206,6 +231,47 @@ export default async function ProductPage({ params }: PageProps) {
         }))}
         isAuthenticated={!!user}
       />
+
+      {/* ── Recommendation Sections ───────────────────────── */}
+      <div className="mt-16 space-y-12">
+        {/* Frequently Bought Together */}
+        {boughtTogether.length > 0 && (
+          <ProductRecommendationStrip
+            title="Frequently Bought Together"
+            subtitle="Customers who bought this also purchased"
+            products={boughtTogether}
+            icon={<ShoppingBag className="h-5 w-5 text-muted-foreground" />}
+            layout="scroll"
+            variant="muted"
+          />
+        )}
+
+        {/* Similar Products */}
+        {similarProducts.length > 0 && (
+          <ProductRecommendationStrip
+            title="You May Also Like"
+            subtitle={`More from ${category?.categoryName ?? "this category"}`}
+            products={similarProducts}
+            icon={<Sparkles className="h-5 w-5 text-muted-foreground" />}
+            layout="scroll"
+          />
+        )}
+
+        {/* Trending Products */}
+        {filteredTrending.length > 0 && (
+          <ProductRecommendationStrip
+            title="Trending Now"
+            subtitle="Popular picks from our store"
+            products={filteredTrending}
+            icon={<TrendingUp className="h-5 w-5 text-muted-foreground" />}
+            layout="scroll"
+            variant="accent"
+          />
+        )}
+
+        {/* Recently Viewed */}
+        <RecentlyViewed excludeIds={[product.productId]} />
+      </div>
     </main>
   );
 }
