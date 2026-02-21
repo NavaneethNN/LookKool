@@ -956,6 +956,21 @@ export async function getAdminCategories() {
   });
 }
 
+/** Lightweight list of active categories (for dropdowns / selectors). */
+export async function getActiveCategoryList() {
+  await requireAdmin();
+
+  return db
+    .select({
+      categoryId: categories.categoryId,
+      categoryName: categories.categoryName,
+      slug: categories.slug,
+    })
+    .from(categories)
+    .where(eq(categories.isActive, true))
+    .orderBy(asc(categories.sortOrder));
+}
+
 export async function createCategory(data: {
   categoryName: string;
   slug: string;

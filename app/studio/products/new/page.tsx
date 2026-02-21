@@ -1,8 +1,13 @@
 import { getAdminCategories } from "@/lib/actions/admin-actions";
-import { ProductForm } from "@/components/admin/product-form";
 import { PageHeader } from "@/components/admin/page-header";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const ProductForm = dynamic(
+  () => import("@/components/admin/product-form").then(m => m.ProductForm),
+  { loading: () => <div className="animate-pulse rounded-xl border bg-white shadow-sm p-6 space-y-4">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 w-full rounded-lg bg-muted" />)}</div> }
+);
 
 export default async function NewProductPage() {
   const categories = await getAdminCategories();

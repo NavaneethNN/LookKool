@@ -2,10 +2,8 @@ import {
   getDeliverySettings,
   getNewsletterSubscribers,
   getStoreSettings,
+  getActiveCategoryList,
 } from "@/lib/actions/admin-actions";
-import { db } from "@/db";
-import { categories } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
 import { getPublicSiteConfig } from "@/lib/site-config";
 import { PageHeader } from "@/components/admin/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,15 +27,7 @@ export default async function SettingsPage() {
       getDeliverySettings(),
       getNewsletterSubscribers(),
       getStoreSettings(),
-      db
-        .select({
-          categoryId: categories.categoryId,
-          categoryName: categories.categoryName,
-          slug: categories.slug,
-        })
-        .from(categories)
-        .where(eq(categories.isActive, true))
-        .orderBy(asc(categories.sortOrder)),
+      getActiveCategoryList(),
       getPublicSiteConfig(),
     ]);
 

@@ -3,12 +3,11 @@ import {
   getAdminCategories,
   getProductStockSummary,
 } from "@/lib/actions/admin-actions";
-import { ProductForm } from "@/components/admin/product-form";
-import { VariantManager } from "@/components/admin/variant-manager";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { ProductDetailActions } from "@/components/admin/product-detail-actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
   Package,
@@ -17,6 +16,16 @@ import {
   BarChart3,
   Clock,
 } from "lucide-react";
+
+const ProductForm = dynamic(
+  () => import("@/components/admin/product-form").then(m => m.ProductForm),
+  { loading: () => <div className="animate-pulse rounded-xl border bg-white shadow-sm p-6 space-y-4">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 w-full rounded-lg bg-muted" />)}</div> }
+);
+
+const VariantManager = dynamic(
+  () => import("@/components/admin/variant-manager").then(m => m.VariantManager),
+  { loading: () => <div className="animate-pulse rounded-xl border bg-white shadow-sm p-6"><div className="h-8 w-48 rounded bg-muted mb-4" /><div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 w-full rounded-lg bg-muted" />)}</div></div> }
+);
 
 export default async function ProductDetailPage({
   params,
