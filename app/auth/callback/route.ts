@@ -8,9 +8,16 @@ import { sendWelcomeEmail } from "@/lib/email/brevo";
  * Exchanges the `code` query param for a session, then redirects home.
  */
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const next = requestUrl.searchParams.get("next") ?? "/";
+
+  // Determine correct origin — prefer x-forwarded-host (Vercel proxy) → env var → request URL
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (forwardedHost ? `${forwardedProto}://${forwardedHost}` : requestUrl.origin);
 
   if (code) {
     const supabase = await createClient();

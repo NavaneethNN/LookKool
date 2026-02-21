@@ -143,14 +143,26 @@ export default async function ProductPage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Fetch recommendations in parallel
-  const [similarProducts, boughtTogether, trendingProducts, siteConfig] =
-    await Promise.all([
-      getSimilarProducts(product.productId, product.categoryId, 8),
-      getFrequentlyBoughtTogether([product.productId], 6),
-      getTrendingProducts(8),
+  // Fetch recommendations in parallel (non-critical — never crash the page)
+  let similarProducts: Awaited<ReturnType<typeof getSimilarProducts>> = [];
+  let boughtTogether: Awaited<ReturnType<typeof getFrequentlyBoughtTogether>> = [];
+  let trendingProducts: Awaited<ReturnType<typeof getTrendingProducts>> = [];
+  let siteConfig: Awaited<ReturnType<typeof getPublicSiteConfig>>;
+
+  try {
+    const [sim, bought, trending, config] = await Promise.all([
+      getSimilarProducts(product.productId, product.categoryId, 8).catch(() => []),
+      getFrequentlyBoughtTogether([product.productId], 6).catch(() => []),
+      getTrendingProducts(8).catch(() => []),
       getPublicSiteConfig(),
     ]);
+    similarProducts = sim;
+    boughtTogether = bought;
+    trendingProducts = trending;
+    siteConfig = config;
+  } catch {
+    siteConfig = (await import("@/lib/site-config-shared")).DEFAULT_CONFIG;
+  }
 
   // Filter trending to exclude current product and similar products
   const similarIds = new Set(similarProducts.map((p) => p.productId));
