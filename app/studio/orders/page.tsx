@@ -17,10 +17,11 @@ const statusFilters = [
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: { status?: string; page?: string };
+  searchParams: Promise<{ status?: string; page?: string }>;
 }) {
-  const status = searchParams.status ?? "all";
-  const page = Number(searchParams.page ?? "1");
+  const sp = await searchParams;
+  const status = sp.status ?? "all";
+  const page = Number(sp.page ?? "1");
   const { orders, total, totalPages } = await getAdminOrders({ status, page });
 
   return (

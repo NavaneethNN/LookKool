@@ -21,9 +21,10 @@ import {
 export default async function ProductDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const productId = Number(params.id);
+  const { id } = await params;
+  const productId = Number(id);
   if (isNaN(productId)) notFound();
 
   const [product, categories, stockSummary] = await Promise.all([

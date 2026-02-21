@@ -7,13 +7,14 @@ import { Star } from "lucide-react";
 export default async function ReviewsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; approved?: string };
+  searchParams: Promise<{ page?: string; approved?: string }>;
 }) {
-  const page = Number(searchParams.page ?? "1");
+  const sp = await searchParams;
+  const page = Number(sp.page ?? "1");
   const approved =
-    searchParams.approved === "true"
+    sp.approved === "true"
       ? true
-      : searchParams.approved === "false"
+      : sp.approved === "false"
       ? false
       : undefined;
 
@@ -38,7 +39,7 @@ export default async function ReviewsPage({
             href={`/studio/reviews${f.value ? `?approved=${f.value}` : ""}`}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               (f.value === undefined && approved === undefined) ||
-              f.value === searchParams.approved
+              f.value === sp.approved
                 ? "bg-primary text-white"
                 : "bg-white text-gray-600 border hover:bg-gray-50"
             }`}

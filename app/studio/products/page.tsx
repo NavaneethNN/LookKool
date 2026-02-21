@@ -10,33 +10,34 @@ import { Plus } from "lucide-react";
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     search?: string;
     category?: string;
     status?: string;
     sort?: string;
     order?: string;
-  };
+  }>;
 }) {
-  const page = Number(searchParams.page ?? "1");
+  const sp = await searchParams;
+  const page = Number(sp.page ?? "1");
   const activeFilter =
-    searchParams.status === "active"
+    sp.status === "active"
       ? true
-      : searchParams.status === "inactive"
+      : sp.status === "inactive"
       ? false
       : undefined;
 
   const [result, categories] = await Promise.all([
     getAdminProducts({
       page,
-      search: searchParams.search,
-      categoryId: searchParams.category
-        ? Number(searchParams.category)
+      search: sp.search,
+      categoryId: sp.category
+        ? Number(sp.category)
         : undefined,
       active: activeFilter,
-      sort: searchParams.sort,
-      order: (searchParams.order as "asc" | "desc") ?? undefined,
+      sort: sp.sort,
+      order: (sp.order as "asc" | "desc") ?? undefined,
     }),
     getAdminCategories(),
   ]);
@@ -60,11 +61,11 @@ export default async function ProductsPage({
         page={result.page}
         totalPages={result.totalPages}
         currentFilters={{
-          search: searchParams.search,
-          category: searchParams.category,
-          status: searchParams.status,
-          sort: searchParams.sort,
-          order: searchParams.order,
+          search: sp.search,
+          category: sp.category,
+          status: sp.status,
+          sort: sp.sort,
+          order: sp.order,
         }}
       />
     </>

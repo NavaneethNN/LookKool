@@ -48,6 +48,11 @@ export type PublicSiteConfig = {
   heroCtaLink: string | null;
   heroSecondaryCtaText: string | null;
   heroSecondaryCtaLink: string | null;
+  // Policies & Payment
+  returnPolicy: string;
+  returnWindowDays: number;
+  cancellationPolicy: string;
+  codEnabled: boolean;
 };
 
 // ─── Defaults ─────────────────────────────────────────────────
@@ -106,6 +111,11 @@ export const DEFAULT_CONFIG: PublicSiteConfig = {
   heroCtaLink: null,
   heroSecondaryCtaText: null,
   heroSecondaryCtaLink: null,
+  // Policies & Payment
+  returnPolicy: "accept",
+  returnWindowDays: 7,
+  cancellationPolicy: "before_shipment",
+  codEnabled: true,
 };
 
 // ─── Helper: hex → HSL component string ───────────────────────

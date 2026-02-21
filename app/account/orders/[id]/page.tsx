@@ -20,7 +20,9 @@ import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { ReturnRequestForm } from "@/components/orders/return-request-form";
+import { CancelOrderButton } from "@/components/orders/cancel-order-button";
 import { getReturnRequestsForOrder } from "@/lib/actions/return-actions";
+import { getPublicSiteConfig } from "@/lib/site-config";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -89,6 +91,18 @@ export default async function OrderDetailPage({ params }: PageProps) {
   }
   const returnedItemIds = new Set(existingReturns.map((r) => r.orderItemId));
 
+  // Fetch policy settings
+  const siteConfig = await getPublicSiteConfig();
+  const returnsAccepted = siteConfig.returnPolicy === "accept";
+  const cancellationPolicy = siteConfig.cancellationPolicy;
+
+  // Determine if cancel button should show
+  const terminalStatuses = ["Delivered", "Cancelled", "Refunded"];
+  const canCancel =
+    cancellationPolicy !== "no_cancellation" &&
+    !terminalStatuses.includes(order.status) &&
+    (cancellationPolicy === "anytime" || order.status !== "Shipped");
+
   const isCancelled = order.status === "Cancelled" || order.status === "Refunded";
   const currentStepIndex = statusSteps.findIndex((s) => s.key === order.status);
 
@@ -118,13 +132,16 @@ export default async function OrderDetailPage({ params }: PageProps) {
             })}
           </p>
         </div>
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
-            statusColor[order.status] || "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {order.status}
-        </span>
+        <div className="flex items-center gap-3">
+          {canCancel && <CancelOrderButton orderId={order.orderId} />}
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
+              statusColor[order.status] || "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {order.status}
+          </span>
+        </div>
       </div>
 
       {/* Order Progress */}
@@ -299,7 +316,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                     parseFloat(item.pricePerUnit) * item.quantity
                   ).toLocaleString("en-IN")}
                 </span>
-                {order.status === "Delivered" && (
+                {order.status === "Delivered" && returnsAccepted && (
                   <ReturnRequestForm
                     orderId={order.orderId}
                     item={{

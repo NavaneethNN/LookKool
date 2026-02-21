@@ -148,6 +148,7 @@ export const returnRequests = pgTable("return_requests", {
   description: text("description"),
   status: returnStatusEnum("status").notNull().default("Pending"),
   refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }),
+  razorpayRefundId: varchar("razorpay_refund_id", { length: 255 }),
   adminNotes: text("admin_notes"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

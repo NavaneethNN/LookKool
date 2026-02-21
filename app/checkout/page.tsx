@@ -20,6 +20,7 @@ export default async function CheckoutPage() {
         storeName={siteConfig.businessName}
         brandColor={siteConfig.sitePrimaryColor}
         deliveryConfig={deliveryConfig}
+        codEnabled={siteConfig.codEnabled}
       />
     </div>
   );

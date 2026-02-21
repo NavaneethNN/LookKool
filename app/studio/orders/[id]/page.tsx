@@ -10,9 +10,10 @@ import Image from "next/image";
 export default async function OrderDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const orderId = Number(params.id);
+  const { id } = await params;
+  const orderId = Number(id);
   if (isNaN(orderId)) notFound();
 
   const order = await getAdminOrderDetail(orderId);

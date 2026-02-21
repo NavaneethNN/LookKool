@@ -64,6 +64,11 @@ async function _fetchSiteConfig(): Promise<PublicSiteConfig> {
         heroCtaLink: storeSettings.heroCtaLink,
         heroSecondaryCtaText: storeSettings.heroSecondaryCtaText,
         heroSecondaryCtaLink: storeSettings.heroSecondaryCtaLink,
+        // Policies
+        returnPolicy: storeSettings.returnPolicy,
+        returnWindowDays: storeSettings.returnWindowDays,
+        cancellationPolicy: storeSettings.cancellationPolicy,
+        codEnabled: storeSettings.codEnabled,
       })
       .from(storeSettings)
       .limit(1);
@@ -107,6 +112,11 @@ async function _fetchSiteConfig(): Promise<PublicSiteConfig> {
       heroCtaLink: row.heroCtaLink || null,
       heroSecondaryCtaText: row.heroSecondaryCtaText || null,
       heroSecondaryCtaLink: row.heroSecondaryCtaLink || null,
+      // Policies
+      returnPolicy: row.returnPolicy || "accept",
+      returnWindowDays: row.returnWindowDays ?? 7,
+      cancellationPolicy: row.cancellationPolicy || "before_shipment",
+      codEnabled: row.codEnabled ?? true,
     };
   } catch {
     return DEFAULT_CONFIG;

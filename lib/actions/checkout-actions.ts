@@ -12,6 +12,7 @@ import {
   couponUsage,
   users,
   deliverySettings,
+  storeSettings,
 } from "@/db/schema";
 import { eq, and, sql, asc, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -856,4 +857,132 @@ export async function getOrderById(orderId: number) {
   });
 
   return order || null;
+}
+
+// ─── Cancel confirmed order (customer-initiated) ──────────────
+
+/**
+ * Customer cancels an order based on the store's cancellation policy.
+ * - "anytime" → can cancel unless Delivered/Cancelled/Refunded
+ * - "before_shipment" → can cancel only if Pending/Processing/Packed
+ * - "no_cancellation" → not allowed
+ * Also triggers Razorpay refund for online-paid orders.
+ */
+export async function cancelConfirmedOrder(orderId: number) {
+  const user = await getAuthUser();
+
+  if (!Number.isInteger(orderId) || orderId < 1) {
+    return { error: "Invalid order" };
+  }
+
+  // Get store cancellation policy
+  const [policyRow] = await db
+    .select({
+      cancellationPolicy: storeSettings.cancellationPolicy,
+    })
+    .from(storeSettings)
+    .limit(1);
+
+  const policy = policyRow?.cancellationPolicy ?? "before_shipment";
+
+  if (policy === "no_cancellation") {
+    return { error: "Order cancellations are not allowed" };
+  }
+
+  const [order] = await db
+    .select()
+    .from(orders)
+    .where(
+      and(
+        eq(orders.orderId, orderId),
+        eq(orders.userId, user.id),
+      )
+    )
+    .limit(1);
+
+  if (!order) return { error: "Order not found" };
+
+  const terminalStatuses = ["Delivered", "Cancelled", "Refunded"];
+  if (terminalStatuses.includes(order.status)) {
+    return { error: "This order cannot be cancelled" };
+  }
+
+  if (policy === "before_shipment" && order.status === "Shipped") {
+    return { error: "Cannot cancel an order that has already been shipped" };
+  }
+
+  // Restore stock
+  const items = await db
+    .select({
+      variantId: orderItems.variantId,
+      quantity: orderItems.quantity,
+    })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId));
+
+  for (const item of items) {
+    await db
+      .update(productVariants)
+      .set({
+        stockCount: sql`${productVariants.stockCount} + ${item.quantity}`,
+      })
+      .where(eq(productVariants.variantId, item.variantId));
+  }
+
+  // Mark order as cancelled
+  await db
+    .update(orders)
+    .set({
+      status: "Cancelled",
+      updatedAt: new Date(),
+    })
+    .where(eq(orders.orderId, orderId));
+
+  // Auto-refund via Razorpay for online-paid orders
+  if (
+    order.paymentMethod === "razorpay" &&
+    order.paymentStatus === "Completed" &&
+    order.razorpayPaymentId
+  ) {
+    try {
+      const keyId = process.env.RAZORPAY_KEY_ID;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (keyId && keySecret) {
+        const refundRes = await fetch(
+          `https://api.razorpay.com/v1/payments/${order.razorpayPaymentId}/refund`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Basic " + Buffer.from(`${keyId}:${keySecret}`).toString("base64"),
+            },
+            body: JSON.stringify({
+              amount: Math.round(parseFloat(order.totalAmount) * 100),
+              notes: { orderId: String(orderId), reason: "Customer cancellation" },
+            }),
+          }
+        );
+        if (refundRes.ok) {
+          await db
+            .update(orders)
+            .set({ paymentStatus: "Refunded", updatedAt: new Date() })
+            .where(eq(orders.orderId, orderId));
+        }
+      }
+    } catch (err) {
+      console.error("Auto-refund on cancellation failed:", err);
+    }
+  }
+
+  // Update COD order payment status
+  if (order.paymentMethod === "cod") {
+    await db
+      .update(orders)
+      .set({ paymentStatus: "Failed", updatedAt: new Date() })
+      .where(eq(orders.orderId, orderId));
+  }
+
+  revalidatePath("/account/orders");
+  revalidatePath(`/account/orders/${orderId}`);
+  return { success: true };
 }

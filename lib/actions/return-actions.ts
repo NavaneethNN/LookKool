@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/db";
-import { returnRequests, orders, orderItems } from "@/db/schema";
+import { returnRequests, orders, orderItems, storeSettings } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -61,16 +61,31 @@ export async function submitReturnRequest(formData: FormData) {
     return { error: "Returns can only be requested for delivered orders" };
   }
 
-  // ─── Return window check (7 days from delivery) ──────────
-  const RETURN_WINDOW_DAYS = 7;
+  // ─── Check if returns are accepted ──────────────────────
+  const [policyRow] = await db
+    .select({
+      returnPolicy: storeSettings.returnPolicy,
+      returnWindowDays: storeSettings.returnWindowDays,
+    })
+    .from(storeSettings)
+    .limit(1);
+
+  const returnPolicy = policyRow?.returnPolicy ?? "accept";
+  const returnWindowDays = policyRow?.returnWindowDays ?? 7;
+
+  if (returnPolicy === "no_returns") {
+    return { error: "Returns are not accepted at this time" };
+  }
+
+  // ─── Return window check ─────────────────────────────────
   const deliveredAt = order.updatedAt || order.createdAt;
   if (deliveredAt) {
     const daysSinceDelivery = Math.floor(
       (Date.now() - new Date(deliveredAt).getTime()) / (1000 * 60 * 60 * 24)
     );
-    if (daysSinceDelivery > RETURN_WINDOW_DAYS) {
+    if (daysSinceDelivery > returnWindowDays) {
       return {
-        error: `Return window has expired. Returns must be requested within ${RETURN_WINDOW_DAYS} days of delivery.`,
+        error: `Return window has expired. Returns must be requested within ${returnWindowDays} days of delivery.`,
       };
     }
   }

@@ -179,6 +179,18 @@ export const storeSettings = pgTable("store_settings", {
   heroSecondaryCtaText: varchar("hero_secondary_cta_text", { length: 100 }),
   heroSecondaryCtaLink: varchar("hero_secondary_cta_link", { length: 255 }),
 
+  // ── Policy & Payment Settings ────────────────────────────────
+  // Return policy: "accept" = accept returns, "no_returns" = do not accept
+  returnPolicy: varchar("return_policy", { length: 30 }).notNull().default("accept"),
+  // Number of days after delivery within which returns are accepted
+  returnWindowDays: integer("return_window_days").notNull().default(7),
+  // Cancellation policy: "anytime" = allow before delivery, "before_shipment" = not after shipped, "no_cancellation" = never
+  cancellationPolicy: varchar("cancellation_policy", { length: 30 }).notNull().default("before_shipment"),
+  // Whether Cash on Delivery is enabled
+  codEnabled: boolean("cod_enabled").notNull().default(true),
+  // Whether refunds are automatically processed via Razorpay when return is marked Refunded
+  autoRefundEnabled: boolean("auto_refund_enabled").notNull().default(true),
+
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

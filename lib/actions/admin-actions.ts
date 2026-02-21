@@ -1407,6 +1407,30 @@ export async function resolveReturn(
     })
     .where(eq(returnRequests.returnId, returnId));
 
+  // ── Auto-refund via Razorpay when marking as "Refunded" ───
+  let refundResult: { success: boolean; refundId?: string; reason?: string } | null = null;
+  if (status === "Refunded") {
+    try {
+      const policySettings = await getPolicySettings();
+      if (policySettings.autoRefundEnabled) {
+        const returnReqForRefund = await db.query.returnRequests.findFirst({
+          where: eq(returnRequests.returnId, returnId),
+          columns: { orderId: true, refundAmount: true },
+        });
+        if (returnReqForRefund?.refundAmount) {
+          refundResult = await processRazorpayRefund(
+            returnReqForRefund.orderId,
+            parseFloat(returnReqForRefund.refundAmount),
+            returnId,
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Auto-refund failed:", err);
+      refundResult = { success: false, reason: String(err) };
+    }
+  }
+
   // Send return status email
   try {
     const returnReq = await db.query.returnRequests.findFirst({
@@ -1445,7 +1469,7 @@ export async function resolveReturn(
   }
 
   revalidatePath("/studio/returns");
-  return { success: true };
+  return { success: true, refundResult };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1620,6 +1644,174 @@ export async function upsertStoreSettings(data: {
   const { revalidateTag } = await import("next/cache");
   revalidateTag("site-config");
   return { success: true };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POLICY SETTINGS
+// ═══════════════════════════════════════════════════════════════
+
+export async function savePolicySettings(data: {
+  returnPolicy: string;
+  returnWindowDays: number;
+  cancellationPolicy: string;
+  codEnabled: boolean;
+  autoRefundEnabled: boolean;
+}) {
+  await requireAdmin();
+
+  // Validate inputs
+  if (!["accept", "no_returns"].includes(data.returnPolicy)) {
+    throw new Error("Invalid return policy value");
+  }
+  if (!["anytime", "before_shipment", "no_cancellation"].includes(data.cancellationPolicy)) {
+    throw new Error("Invalid cancellation policy value");
+  }
+  if (data.returnWindowDays < 1 || data.returnWindowDays > 90) {
+    throw new Error("Return window must be between 1 and 90 days");
+  }
+
+  const [existing] = await db.select({ settingId: storeSettings.settingId }).from(storeSettings).limit(1);
+
+  if (existing) {
+    await db
+      .update(storeSettings)
+      .set({
+        returnPolicy: data.returnPolicy,
+        returnWindowDays: data.returnWindowDays,
+        cancellationPolicy: data.cancellationPolicy,
+        codEnabled: data.codEnabled,
+        autoRefundEnabled: data.autoRefundEnabled,
+        updatedAt: new Date(),
+      })
+      .where(eq(storeSettings.settingId, existing.settingId));
+  } else {
+    await db.insert(storeSettings).values({
+      returnPolicy: data.returnPolicy,
+      returnWindowDays: data.returnWindowDays,
+      cancellationPolicy: data.cancellationPolicy,
+      codEnabled: data.codEnabled,
+      autoRefundEnabled: data.autoRefundEnabled,
+    });
+  }
+
+  revalidatePath("/studio/settings");
+  const { revalidateTag } = await import("next/cache");
+  revalidateTag("site-config");
+  return { success: true };
+}
+
+/**
+ * Get policy settings (public-safe — no admin check).
+ * Used by checkout page and customer-facing pages.
+ */
+export async function getPolicySettings() {
+  const [row] = await db
+    .select({
+      returnPolicy: storeSettings.returnPolicy,
+      returnWindowDays: storeSettings.returnWindowDays,
+      cancellationPolicy: storeSettings.cancellationPolicy,
+      codEnabled: storeSettings.codEnabled,
+      autoRefundEnabled: storeSettings.autoRefundEnabled,
+    })
+    .from(storeSettings)
+    .limit(1);
+
+  return row ?? {
+    returnPolicy: "accept",
+    returnWindowDays: 7,
+    cancellationPolicy: "before_shipment",
+    codEnabled: true,
+    autoRefundEnabled: true,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RAZORPAY REFUND
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Process refund through Razorpay for an online-paid order.
+ * Called when admin marks a return as "Refunded" (if auto-refund enabled)
+ * or when admin cancels an order that was paid via Razorpay.
+ */
+export async function processRazorpayRefund(
+  orderId: number,
+  amount: number,
+  returnId?: number,
+) {
+  await requireAdmin();
+
+  // Get the order to find the Razorpay payment ID
+  const [order] = await db
+    .select({
+      razorpayPaymentId: orders.razorpayPaymentId,
+      paymentMethod: orders.paymentMethod,
+      paymentStatus: orders.paymentStatus,
+    })
+    .from(orders)
+    .where(eq(orders.orderId, orderId))
+    .limit(1);
+
+  if (!order) throw new Error("Order not found");
+  if (order.paymentMethod !== "razorpay") {
+    return { success: false, reason: "Not a Razorpay payment — manual refund needed" };
+  }
+  if (!order.razorpayPaymentId) {
+    return { success: false, reason: "No Razorpay payment ID on record" };
+  }
+
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    throw new Error("Razorpay credentials not configured");
+  }
+
+  // Call Razorpay Refund API
+  const refundRes = await fetch(
+    `https://api.razorpay.com/v1/payments/${order.razorpayPaymentId}/refund`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Basic " + Buffer.from(`${keyId}:${keySecret}`).toString("base64"),
+      },
+      body: JSON.stringify({
+        amount: Math.round(amount * 100), // Convert to paise
+        notes: {
+          orderId: String(orderId),
+          returnId: returnId ? String(returnId) : undefined,
+          reason: returnId ? "Return approved" : "Order cancellation",
+        },
+      }),
+    }
+  );
+
+  if (!refundRes.ok) {
+    const err = await refundRes.json().catch(() => ({}));
+    console.error("Razorpay refund failed:", err);
+    return {
+      success: false,
+      reason: err?.error?.description || "Razorpay refund API failed",
+    };
+  }
+
+  const refund = await refundRes.json();
+
+  // Store refund ID on the return request if applicable
+  if (returnId) {
+    await db
+      .update(returnRequests)
+      .set({ razorpayRefundId: refund.id, updatedAt: new Date() })
+      .where(eq(returnRequests.returnId, returnId));
+  }
+
+  // Update order payment status
+  await db
+    .update(orders)
+    .set({ paymentStatus: "Refunded", updatedAt: new Date() })
+    .where(eq(orders.orderId, orderId));
+
+  return { success: true, refundId: refund.id };
 }
 
 // ═══════════════════════════════════════════════════════════════

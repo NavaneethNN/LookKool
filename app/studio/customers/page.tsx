@@ -6,12 +6,13 @@ import Link from "next/link";
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: { page?: string; search?: string };
+  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
-  const page = Number(searchParams.page ?? "1");
+  const sp = await searchParams;
+  const page = Number(sp.page ?? "1");
   const { customers, total, totalPages } = await getAdminCustomers({
     page,
-    search: searchParams.search,
+    search: sp.search,
   });
 
   return (
@@ -24,7 +25,7 @@ export default async function CustomersPage({
           <input
             type="text"
             name="search"
-            defaultValue={searchParams.search ?? ""}
+            defaultValue={sp.search ?? ""}
             placeholder="Search by name or email..."
             className="w-full h-10 rounded-lg border border-input bg-white px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
@@ -129,7 +130,7 @@ export default async function CustomersPage({
             <div className="flex gap-2">
               {page > 1 && (
                 <Link
-                  href={`/studio/customers?page=${page - 1}${searchParams.search ? `&search=${searchParams.search}` : ""}`}
+                  href={`/studio/customers?page=${page - 1}${sp.search ? `&search=${sp.search}` : ""}`}
                   className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-100"
                 >
                   Previous
@@ -137,7 +138,7 @@ export default async function CustomersPage({
               )}
               {page < totalPages && (
                 <Link
-                  href={`/studio/customers?page=${page + 1}${searchParams.search ? `&search=${searchParams.search}` : ""}`}
+                  href={`/studio/customers?page=${page + 1}${sp.search ? `&search=${sp.search}` : ""}`}
                   className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-100"
                 >
                   Next

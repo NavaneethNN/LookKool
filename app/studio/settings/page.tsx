@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { DeliverySettingForm } from "@/components/admin/delivery-setting-form";
 import { StoreSettingsForm } from "@/components/admin/store-settings-form";
 import { SiteAppearanceForm } from "@/components/admin/site-appearance-form";
+import { PolicySettingsForm } from "@/components/admin/policy-settings-form";
 
 export default async function SettingsPage() {
   const [settings, subscribers, storeSettings, allCategories, siteConfig] =
@@ -52,6 +53,7 @@ export default async function SettingsPage() {
           <TabsTrigger value="appearance">Site &amp; Appearance</TabsTrigger>
           <TabsTrigger value="store">Store &amp; Billing</TabsTrigger>
           <TabsTrigger value="delivery">Delivery Settings</TabsTrigger>
+          <TabsTrigger value="policies">Policies &amp; Payments</TabsTrigger>
           <TabsTrigger value="newsletter">
             Newsletter ({subscribers.length})
           </TabsTrigger>
@@ -167,6 +169,19 @@ export default async function SettingsPage() {
               </Table>
             </div>
           </div>
+        </TabsContent>
+
+        {/* ── Policies & Payments ─────────────────────── */}
+        <TabsContent value="policies">
+          <PolicySettingsForm
+            settings={{
+              returnPolicy: storeSettings?.returnPolicy ?? "accept",
+              returnWindowDays: storeSettings?.returnWindowDays ?? 7,
+              cancellationPolicy: storeSettings?.cancellationPolicy ?? "before_shipment",
+              codEnabled: storeSettings?.codEnabled ?? true,
+              autoRefundEnabled: storeSettings?.autoRefundEnabled ?? true,
+            }}
+          />
         </TabsContent>
 
         {/* ── Newsletter ─────────────────────────── */}

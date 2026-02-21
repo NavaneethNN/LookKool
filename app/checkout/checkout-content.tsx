@@ -85,10 +85,12 @@ export function CheckoutContent({
   storeName = "LookKool",
   brandColor = "#470B49",
   deliveryConfig = { freeAbove: 999, standardCharge: 79 },
+  codEnabled = true,
 }: {
   storeName?: string;
   brandColor?: string;
   deliveryConfig?: { freeAbove: number | null; standardCharge: number };
+  codEnabled?: boolean;
 }) {
   const { items, total, savings, clearCart } = useCartStore();
 
@@ -449,29 +451,31 @@ export function CheckoutContent({
               </div>
             </label>
 
-            <label
-              className={`flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-all ${
-                paymentMethod === "cod"
-                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                  : "hover:border-muted-foreground/30"
-              }`}
-            >
-              <input
-                type="radio"
-                name="payment"
-                value="cod"
-                checked={paymentMethod === "cod"}
-                onChange={() => setPaymentMethod("cod")}
-                className="h-4 w-4 accent-primary"
-              />
-              <Banknote className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <span className="font-medium text-sm">Cash on Delivery</span>
-                <p className="text-xs text-muted-foreground">
-                  Pay when you receive your order
-                </p>
-              </div>
-            </label>
+            {codEnabled && (
+              <label
+                className={`flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-all ${
+                  paymentMethod === "cod"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    : "hover:border-muted-foreground/30"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  value="cod"
+                  checked={paymentMethod === "cod"}
+                  onChange={() => setPaymentMethod("cod")}
+                  className="h-4 w-4 accent-primary"
+                />
+                <Banknote className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <span className="font-medium text-sm">Cash on Delivery</span>
+                  <p className="text-xs text-muted-foreground">
+                    Pay when you receive your order
+                  </p>
+                </div>
+              </label>
+            )}
           </CardContent>
         </Card>
 

@@ -10,9 +10,10 @@ import { ArrowLeft, MapPin, ShoppingCart } from "lucide-react";
 export default async function CustomerDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const data = await getAdminCustomerDetail(params.id);
+  const { id } = await params;
+  const data = await getAdminCustomerDetail(id);
   if (!data?.customer) notFound();
 
   const { customer, addresses, orders } = data;

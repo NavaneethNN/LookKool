@@ -15,10 +15,11 @@ import {
 export default async function ReturnsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; status?: string };
+  searchParams: Promise<{ page?: string; status?: string }>;
 }) {
-  const page = Number(searchParams.page ?? "1");
-  const status = searchParams.status || undefined;
+  const sp = await searchParams;
+  const page = Number(sp.page ?? "1");
+  const status = sp.status || undefined;
 
   const { returns, total, totalPages } = await getAdminReturns({
     page,

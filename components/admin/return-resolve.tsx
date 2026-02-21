@@ -57,8 +57,16 @@ export function ReturnResolve({
     }
     setLoading(true);
     try {
-      await resolveReturn(returnId, status, notes || undefined);
+      const result = await resolveReturn(returnId, status, notes || undefined);
       toast.success(`Return updated to ${status}`);
+      // Show refund result if applicable
+      if (result.refundResult) {
+        if (result.refundResult.success) {
+          toast.success(`Razorpay refund processed (ID: ${result.refundResult.refundId})`);
+        } else {
+          toast.warning(`Auto-refund skipped: ${result.refundResult.reason}`);
+        }
+      }
       setOpen(false);
       router.refresh();
     } catch {
