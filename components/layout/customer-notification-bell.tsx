@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useTransition } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Bell, Check, Package, Tag, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -50,21 +50,24 @@ interface Notification {
 export function CustomerNotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [, startTransition] = useTransition();
+  const pollingRef = useRef(false); // prevent overlapping calls
 
-  const loadNotifications = useCallback(() => {
-    startTransition(async () => {
-      try {
-        const [result, count] = await Promise.all([
-          getMyNotifications({ limit: 10 }),
-          getUnreadNotificationCount(),
-        ]);
-        setNotifications(result.notifications as unknown as Notification[]);
-        setUnreadCount(count);
-      } catch {
-        // user might not be logged in
-      }
-    });
+  const loadNotifications = useCallback(async () => {
+    // Skip if a previous poll is still in-flight
+    if (pollingRef.current) return;
+    pollingRef.current = true;
+    try {
+      const [result, count] = await Promise.all([
+        getMyNotifications({ limit: 10 }),
+        getUnreadNotificationCount(),
+      ]);
+      setNotifications(result.notifications as unknown as Notification[]);
+      setUnreadCount(count);
+    } catch {
+      // user might not be logged in
+    } finally {
+      pollingRef.current = false;
+    }
   }, []);
 
   useEffect(() => {
