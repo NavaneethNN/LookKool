@@ -12,6 +12,8 @@ interface ProductJsonLdProps {
   inStock: boolean;
   category?: string;
   productCode: string;
+  storeName?: string;
+  storeUrl?: string;
 }
 
 export function ProductJsonLd({
@@ -26,20 +28,23 @@ export function ProductJsonLd({
   inStock,
   category,
   productCode,
+  storeName = "LookKool",
+  storeUrl,
 }: ProductJsonLdProps) {
-  const url = `${siteConfig.url}/products/${slug}`;
+  const baseUrl = storeUrl || siteConfig.url;
+  const url = `${baseUrl}/products/${slug}`;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name,
-    description: description || `Buy ${name} at LookKool`,
+    description: description || `Buy ${name} at ${storeName}`,
     image: images,
     url,
     sku: productCode,
     brand: {
       "@type": "Brand",
-      name: "LookKool",
+      name: storeName,
     },
     ...(category && {
       category,
@@ -59,7 +64,7 @@ export function ProductJsonLd({
         : "https://schema.org/OutOfStock",
       seller: {
         "@type": "Organization",
-        name: "LookKool",
+        name: storeName,
       },
     },
     ...(totalReviews > 0 && {

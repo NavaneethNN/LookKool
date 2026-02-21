@@ -316,7 +316,7 @@ export function ProductsList({
               }
             }}
             placeholder="Search by name or code..."
-            className="w-full h-10 rounded-lg border border-input bg-white pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#470B49]/20 focus:border-[#470B49]"
+            className="w-full h-10 rounded-lg border border-input bg-white pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
           {searchInput && (
             <button
@@ -344,7 +344,7 @@ export function ProductsList({
                 })
               )
             }
-            className="h-9 rounded-lg border border-input bg-white px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[#470B49]/20 focus:border-[#470B49]"
+            className="h-9 rounded-lg border border-input bg-white px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">All Categories</option>
             {categories.map((cat) => (
@@ -365,7 +365,7 @@ export function ProductsList({
                 })
               )
             }
-            className="h-9 rounded-lg border border-input bg-white px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[#470B49]/20 focus:border-[#470B49]"
+            className="h-9 rounded-lg border border-input bg-white px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -415,7 +415,7 @@ export function ProductsList({
                 router.push(buildUrl({ sort, order, page: "1" }));
               }
             }}
-            className="h-9 rounded-lg border border-input bg-white px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[#470B49]/20 focus:border-[#470B49]"
+            className="h-9 rounded-lg border border-input bg-white px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Sort: Priority</option>
             <option value="name-asc">Name A–Z</option>
@@ -431,11 +431,11 @@ export function ProductsList({
 
       {/* ── Bulk Action Bar ────────────────────────────── */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 bg-[#470B49]/5 border border-[#470B49]/20 rounded-xl px-5 py-3 animate-in slide-in-from-top-2">
-          <span className="text-sm font-medium text-[#470B49]">
+        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-5 py-3 animate-in slide-in-from-top-2">
+          <span className="text-sm font-medium text-primary">
             {selected.size} selected
           </span>
-          <div className="h-5 w-px bg-[#470B49]/20" />
+          <div className="h-5 w-px bg-primary/20" />
           <Button
             size="sm"
             variant="outline"
@@ -564,9 +564,9 @@ export function ProductsList({
                 <th className="w-10 px-4 py-3">
                   <button onClick={toggleAll} className="text-gray-400 hover:text-gray-600">
                     {allSelected ? (
-                      <CheckSquare className="w-4 h-4 text-[#470B49]" />
+                      <CheckSquare className="w-4 h-4 text-primary" />
                     ) : someSelected ? (
-                      <div className="w-4 h-4 border-2 border-[#470B49] rounded-sm bg-[#470B49]/20" />
+                      <div className="w-4 h-4 border-2 border-primary rounded-sm bg-primary/20" />
                     ) : (
                       <Square className="w-4 h-4" />
                     )}
@@ -607,7 +607,7 @@ export function ProductsList({
                     key={product.productId}
                     className={`group transition-colors ${
                       isSelected
-                        ? "bg-[#470B49]/[0.03]"
+                        ? "bg-primary/[0.03]"
                         : "hover:bg-gray-50/50"
                     } ${deleteConfirm === product.productId ? "bg-red-50/50" : ""}`}
                   >
@@ -615,7 +615,7 @@ export function ProductsList({
                     <td className="px-4 py-3">
                       <button onClick={() => toggleOne(product.productId)}>
                         {isSelected ? (
-                          <CheckSquare className="w-4 h-4 text-[#470B49]" />
+                          <CheckSquare className="w-4 h-4 text-primary" />
                         ) : (
                           <Square className="w-4 h-4 text-gray-300 group-hover:text-gray-400" />
                         )}
@@ -642,7 +642,7 @@ export function ProductsList({
                         <div className="min-w-0">
                           <Link
                             href={`/studio/products/${product.productId}`}
-                            className="text-sm font-medium text-gray-900 hover:text-[#470B49] truncate block max-w-[240px]"
+                            className="text-sm font-medium text-gray-900 hover:text-primary truncate block max-w-[240px]"
                           >
                             {product.productName}
                           </Link>
@@ -926,7 +926,7 @@ export function ProductsList({
                         href={buildUrl({ page: String(p) })}
                         className={`w-8 h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${
                           p === page
-                            ? "bg-[#470B49] text-white"
+                            ? "bg-primary text-white"
                             : "hover:bg-gray-100 text-gray-600"
                         }`}
                       >

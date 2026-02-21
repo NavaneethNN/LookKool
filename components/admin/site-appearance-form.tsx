@@ -17,19 +17,29 @@ import {
   Image as ImageIcon,
   Heart,
   Info,
+  Search,
+  Share2,
+  Megaphone,
+  Instagram,
+  Facebook,
+  Twitter,
+  Youtube,
+  ExternalLink,
+  Type,
+  MousePointerClick,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { upsertSiteAppearance } from "@/lib/actions/admin-actions";
-import type { NavLinkConfig, FooterLinkConfig } from "@/lib/site-config";
+import type { NavLinkConfig, FooterLinkConfig } from "@/lib/site-config-shared";
 import {
   DEFAULT_NAV_LINKS,
   DEFAULT_QUICK_LINKS,
   DEFAULT_HELP_LINKS,
   DEFAULT_LEGAL_LINKS,
-} from "@/lib/site-config";
+} from "@/lib/site-config-shared";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -45,6 +55,24 @@ type SiteAppearanceData = {
   footerContactPhone: string;
   footerContactEmail: string;
   footerShowMadeInIndia: boolean;
+  // SEO
+  seoTitle: string;
+  seoDescription: string;
+  seoKeywords: string;
+  ogImageUrl: string;
+  // Social
+  socialInstagram: string;
+  socialFacebook: string;
+  socialTwitter: string;
+  socialYoutube: string;
+  // Hero
+  heroTitle: string;
+  heroSubtitle: string;
+  heroBadgeText: string;
+  heroCtaText: string;
+  heroCtaLink: string;
+  heroSecondaryCtaText: string;
+  heroSecondaryCtaLink: string;
 };
 
 type Category = { categoryId: number; categoryName: string; slug: string };
@@ -65,7 +93,7 @@ function Section({
   return (
     <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
       <div className="flex items-center gap-3 px-6 py-4 border-b bg-gray-50/50">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#470B49]/10 text-[#470B49]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
           {icon}
         </div>
         <div>
@@ -102,7 +130,7 @@ function ToggleSwitch({
           aria-checked={checked}
           onClick={() => onChange(!checked)}
           className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-            checked ? "bg-[#470B49]" : "bg-gray-200"
+            checked ? "bg-primary" : "bg-gray-200"
           }`}
         >
           <span
@@ -171,31 +199,38 @@ function NavLinkRow({
         className="h-8 w-28 text-sm"
       />
 
-      {/* Href + optional category picker */}
+      {/* Destination picker (only valid pages) */}
       <div className="flex flex-1 gap-1 min-w-0">
-        <Input
+        <select
+          className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-sm"
           value={link.href}
-          onChange={(e) => onChange({ ...link, href: e.target.value })}
-          placeholder="/path or URL"
-          className="h-8 flex-1 text-sm font-mono"
-        />
-        {categories.length > 0 && (
-          <select
-            className="h-8 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground"
-            value=""
-            onChange={(e) => {
-              if (e.target.value)
-                onChange({ ...link, href: `/categories/${e.target.value}` });
-            }}
-          >
-            <option value="">📂 Category</option>
-            {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.categoryName}
-              </option>
-            ))}
-          </select>
-        )}
+          onChange={(e) => {
+            const href = e.target.value;
+            // Auto-set label for common pages
+            if (href === "/" && link.label === "New Link") {
+              onChange({ ...link, href, label: "Home" });
+            } else if (href === "/shop" && link.label === "New Link") {
+              onChange({ ...link, href, label: "Shop All" });
+            } else if (href.startsWith("/categories/") && link.label === "New Link") {
+              const cat = categories.find((c) => `/categories/${c.slug}` === href);
+              onChange({ ...link, href, label: cat?.categoryName || link.label });
+            } else {
+              onChange({ ...link, href });
+            }
+          }}
+        >
+          <option value="/" >🏠 Home</option>
+          <option value="/shop">🛍️ Shop All</option>
+          {categories.length > 0 && (
+            <optgroup label="Categories">
+              {categories.map((c) => (
+                <option key={c.slug} value={`/categories/${c.slug}`}>
+                  📂 {c.categoryName}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
       </div>
 
       {/* Enabled toggle */}
@@ -319,7 +354,7 @@ function FooterLinkEditor({
       <button
         type="button"
         onClick={() => onChange([...links, { label: "", href: "" }])}
-        className="flex items-center gap-1.5 text-sm text-[#470B49] hover:underline"
+        className="flex items-center gap-1.5 text-sm text-primary hover:underline"
       >
         <Plus className="h-4 w-4" />
         {addLabel}
@@ -349,6 +384,24 @@ export function SiteAppearanceForm({
     footerContactPhone: settings?.footerContactPhone ?? "",
     footerContactEmail: settings?.footerContactEmail ?? "",
     footerShowMadeInIndia: settings?.footerShowMadeInIndia ?? true,
+    // SEO
+    seoTitle: settings?.seoTitle ?? "",
+    seoDescription: settings?.seoDescription ?? "",
+    seoKeywords: settings?.seoKeywords ?? "",
+    ogImageUrl: settings?.ogImageUrl ?? "",
+    // Social
+    socialInstagram: settings?.socialInstagram ?? "",
+    socialFacebook: settings?.socialFacebook ?? "",
+    socialTwitter: settings?.socialTwitter ?? "",
+    socialYoutube: settings?.socialYoutube ?? "",
+    // Hero
+    heroTitle: settings?.heroTitle ?? "",
+    heroSubtitle: settings?.heroSubtitle ?? "",
+    heroBadgeText: settings?.heroBadgeText ?? "",
+    heroCtaText: settings?.heroCtaText ?? "",
+    heroCtaLink: settings?.heroCtaLink ?? "",
+    heroSecondaryCtaText: settings?.heroSecondaryCtaText ?? "",
+    heroSecondaryCtaLink: settings?.heroSecondaryCtaLink ?? "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -380,6 +433,24 @@ export function SiteAppearanceForm({
         footerContactPhone: form.footerContactPhone || null,
         footerContactEmail: form.footerContactEmail || null,
         footerShowMadeInIndia: form.footerShowMadeInIndia,
+        // SEO
+        seoTitle: form.seoTitle || null,
+        seoDescription: form.seoDescription || null,
+        seoKeywords: form.seoKeywords || null,
+        ogImageUrl: form.ogImageUrl || null,
+        // Social
+        socialInstagram: form.socialInstagram || null,
+        socialFacebook: form.socialFacebook || null,
+        socialTwitter: form.socialTwitter || null,
+        socialYoutube: form.socialYoutube || null,
+        // Hero
+        heroTitle: form.heroTitle || null,
+        heroSubtitle: form.heroSubtitle || null,
+        heroBadgeText: form.heroBadgeText || null,
+        heroCtaText: form.heroCtaText || null,
+        heroCtaLink: form.heroCtaLink || null,
+        heroSecondaryCtaText: form.heroSecondaryCtaText || null,
+        heroSecondaryCtaLink: form.heroSecondaryCtaLink || null,
       });
       if (result.success) {
         toast.success("Site appearance saved! Reload the page to see changes.");
@@ -513,7 +584,7 @@ export function SiteAppearanceForm({
       <Section
         icon={<Navigation className="h-4 w-4" />}
         title="Navbar Links"
-        description="Control which links appear in the top navigation. Toggle Shown/Hidden to show or hide each link."
+        description="Control which links appear in the top navigation. Each link must point to Home, Shop All, or a category page."
       >
         <div className="space-y-2">
           {form.navLinksConfig.map((link, i) => (
@@ -545,7 +616,7 @@ export function SiteAppearanceForm({
                 { label: "New Link", href: "/", enabled: true },
               ])
             }
-            className="flex items-center gap-1.5 text-sm text-[#470B49] hover:underline mt-1"
+            className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-1"
           >
             <Plus className="h-4 w-4" />
             Add Nav Link
@@ -634,6 +705,230 @@ export function SiteAppearanceForm({
           checked={form.footerShowMadeInIndia}
           onChange={(v) => update("footerShowMadeInIndia", v)}
         />
+      </Section>
+
+      {/* ── SEO & Open Graph ──────────────────────────────── */}
+      <Section
+        icon={<Search className="h-4 w-4" />}
+        title="SEO & Open Graph"
+        description="Control how your store appears in search results and when shared on social media."
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              SEO Title
+            </label>
+            <p className="text-xs text-gray-500">
+              Custom title tag for the homepage. Falls back to your Business Name if empty.
+            </p>
+            <Input
+              value={form.seoTitle}
+              onChange={(e) => update("seoTitle", e.target.value)}
+              placeholder="My Awesome Store – Trendy Fashion Online"
+              maxLength={70}
+            />
+            <p className="text-xs text-gray-400">{form.seoTitle.length}/70 characters</p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              SEO Description
+            </label>
+            <p className="text-xs text-gray-500">
+              Custom meta description for search results. Falls back to Shop
+              Description if empty.
+            </p>
+            <textarea
+              value={form.seoDescription}
+              onChange={(e) => update("seoDescription", e.target.value)}
+              rows={2}
+              placeholder="Discover trendy, affordable fashion at our store…"
+              maxLength={160}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            <p className="text-xs text-gray-400">{form.seoDescription.length}/160 characters</p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              SEO Keywords
+            </label>
+            <p className="text-xs text-gray-500">
+              Comma-separated keywords for search engines.
+            </p>
+            <Input
+              value={form.seoKeywords}
+              onChange={(e) => update("seoKeywords", e.target.value)}
+              placeholder="fashion, women clothing, kurtas, dresses, online shop"
+            />
+          </div>
+          <Separator className="my-2" />
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              Open Graph Image
+            </label>
+            <p className="text-xs text-gray-500">
+              Image shown when your site link is shared on Facebook, WhatsApp,
+              Twitter, etc. Recommended: 1200×630px.
+            </p>
+            <ImageUpload
+              value={form.ogImageUrl}
+              onChange={(url) => update("ogImageUrl", url)}
+              folder="site-assets"
+              size={200}
+            />
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Social Links ───────────────────────────────────── */}
+      <Section
+        icon={<Share2 className="h-4 w-4" />}
+        title="Social Media Links"
+        description="Add links to your social profiles. These are shown in the footer."
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <Instagram className="h-3.5 w-3.5" />
+              Instagram
+            </label>
+            <Input
+              value={form.socialInstagram}
+              onChange={(e) => update("socialInstagram", e.target.value)}
+              placeholder="https://instagram.com/yourshop"
+              type="url"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <Facebook className="h-3.5 w-3.5" />
+              Facebook
+            </label>
+            <Input
+              value={form.socialFacebook}
+              onChange={(e) => update("socialFacebook", e.target.value)}
+              placeholder="https://facebook.com/yourshop"
+              type="url"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <Twitter className="h-3.5 w-3.5" />
+              Twitter / X
+            </label>
+            <Input
+              value={form.socialTwitter}
+              onChange={(e) => update("socialTwitter", e.target.value)}
+              placeholder="https://x.com/yourshop"
+              type="url"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <Youtube className="h-3.5 w-3.5" />
+              YouTube
+            </label>
+            <Input
+              value={form.socialYoutube}
+              onChange={(e) => update("socialYoutube", e.target.value)}
+              placeholder="https://youtube.com/@yourshop"
+              type="url"
+            />
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Hero / Banner ──────────────────────────────────── */}
+      <Section
+        icon={<Megaphone className="h-4 w-4" />}
+        title="Hero Banner"
+        description="Customize the main banner on the homepage. Leave fields empty to use defaults."
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <Type className="h-3.5 w-3.5" />
+              Badge Text
+            </label>
+            <p className="text-xs text-gray-500">
+              Small badge shown above the title (e.g. &quot;New Collection 2026&quot;).
+            </p>
+            <Input
+              value={form.heroBadgeText}
+              onChange={(e) => update("heroBadgeText", e.target.value)}
+              placeholder="New Collection 2026"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              Hero Title
+            </label>
+            <p className="text-xs text-gray-500">
+              Main heading on the homepage hero. Leave empty for default.
+            </p>
+            <Input
+              value={form.heroTitle}
+              onChange={(e) => update("heroTitle", e.target.value)}
+              placeholder="Stay Kool, Look Kool"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              Hero Subtitle
+            </label>
+            <textarea
+              value={form.heroSubtitle}
+              onChange={(e) => update("heroSubtitle", e.target.value)}
+              rows={2}
+              placeholder="Your go-to women's boutique for trendy, affordable fashion."
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+          <Separator className="my-2" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+                <MousePointerClick className="h-3.5 w-3.5" />
+                Primary Button Text
+              </label>
+              <Input
+                value={form.heroCtaText}
+                onChange={(e) => update("heroCtaText", e.target.value)}
+                placeholder="Shop Now"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+                <ExternalLink className="h-3.5 w-3.5" />
+                Primary Button Link
+              </label>
+              <Input
+                value={form.heroCtaLink}
+                onChange={(e) => update("heroCtaLink", e.target.value)}
+                placeholder="/categories/women"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Secondary Button Text
+              </label>
+              <Input
+                value={form.heroSecondaryCtaText}
+                onChange={(e) => update("heroSecondaryCtaText", e.target.value)}
+                placeholder="New Arrivals"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Secondary Button Link
+              </label>
+              <Input
+                value={form.heroSecondaryCtaLink}
+                onChange={(e) => update("heroSecondaryCtaLink", e.target.value)}
+                placeholder="/new-arrivals"
+              />
+            </div>
+          </div>
+        </div>
       </Section>
 
       {/* ── Save ───────────────────────────────────────────── */}

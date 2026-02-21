@@ -4,14 +4,18 @@ import { products, productVariants, productImages, categories } from "@/db/schem
 import { eq, and, or, ilike, sql, desc } from "drizzle-orm";
 import { SearchContent } from "./search-content";
 import { getTrendingProducts, getPopularProducts } from "@/lib/actions/recommendation-actions";
+import { getPublicSiteConfig } from "@/lib/site-config";
 
 // Disable caching for search (depends on query params)
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Search – LookKool",
-  description: "Search for products on LookKool.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const siteConfig = await getPublicSiteConfig();
+  return {
+    title: `Search – ${siteConfig.businessName}`,
+    description: `Search for products on ${siteConfig.businessName}.`,
+  };
+}
 
 interface PageProps {
   searchParams: Promise<{ q?: string; category?: string }>;
@@ -128,6 +132,8 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const trendingIds = new Set(trendingProducts.map((p) => p.productId));
   const dedupedPopular = popularProducts.filter((p) => !trendingIds.has(p.productId));
 
+  const siteConfig = await getPublicSiteConfig();
+
   return (
     <main className="container mx-auto px-4 py-8">
       <SearchContent
@@ -137,6 +143,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
         products={productList}
         trendingProducts={trendingProducts}
         popularProducts={dedupedPopular}
+        storeName={siteConfig.businessName}
       />
     </main>
   );

@@ -112,7 +112,7 @@ export function OrderActions({ order }: OrderActionsProps) {
             onClick={handleStatusUpdate}
             disabled={loading === "status" || status === order.status}
             size="sm"
-            className="bg-[#470B49] hover:bg-[#5a1060]"
+            className="bg-primary hover:bg-primary/90"
           >
             {loading === "status" ? "Saving..." : "Update"}
           </Button>
@@ -142,7 +142,7 @@ export function OrderActions({ order }: OrderActionsProps) {
               loading === "payment" || paymentStatus === order.paymentStatus
             }
             size="sm"
-            className="bg-[#470B49] hover:bg-[#5a1060]"
+            className="bg-primary hover:bg-primary/90"
           >
             {loading === "payment" ? "Saving..." : "Update"}
           </Button>
@@ -164,7 +164,7 @@ export function OrderActions({ order }: OrderActionsProps) {
             onClick={handleTrackingUpdate}
             disabled={loading === "tracking"}
             size="sm"
-            className="bg-[#470B49] hover:bg-[#5a1060]"
+            className="bg-primary hover:bg-primary/90"
           >
             {loading === "tracking" ? "Saving..." : "Save"}
           </Button>
@@ -186,7 +186,7 @@ export function OrderActions({ order }: OrderActionsProps) {
           onClick={handleNotesUpdate}
           disabled={loading === "notes"}
           size="sm"
-          className="mt-2 bg-[#470B49] hover:bg-[#5a1060]"
+          className="mt-2 bg-primary hover:bg-primary/90"
         >
           {loading === "notes" ? "Saving..." : "Save Notes"}
         </Button>

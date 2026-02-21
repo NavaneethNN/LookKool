@@ -6,13 +6,14 @@ import {
   char,
   boolean,
   integer,
+  numeric,
   serial,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // ─── Enums ─────────────────────────────────────────────────────
-export const userRoleEnum = pgEnum("user_role", ["customer", "admin"]);
+export const userRoleEnum = pgEnum("user_role", ["customer", "admin", "cashier"]);
 
 // ─── Tables ────────────────────────────────────────────────────
 
@@ -30,6 +31,9 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("customer"),
   isEmailVerified: boolean("is_email_verified").notNull().default(false),
   profilePicture: varchar("profile_picture", { length: 512 }),
+  loyaltyPoints: integer("loyalty_points").notNull().default(0),
+  creditBalance: numeric("credit_balance", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  totalSpent: numeric("total_spent", { precision: 12, scale: 2 }).notNull().default("0.00"),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -68,15 +72,51 @@ export const userAddresses = pgTable("user_addresses", {
     .defaultNow(),
 });
 
+/**
+ * loyalty_transactions
+ * Audit log for every loyalty point / credit balance change.
+ */
+export const loyaltyTransactionTypeEnum = pgEnum("loyalty_transaction_type", [
+  "earned",       // Points earned from purchase
+  "redeemed",     // Points/credit used at checkout
+  "credit_added", // Manual credit added by admin
+  "credit_used",  // Credit used on a bill
+  "adjustment",   // Manual admin adjustment
+  "expired",      // Points expired
+]);
+
+export const loyaltyTransactions = pgTable("loyalty_transactions", {
+  transactionId: serial("transaction_id").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.userId, { onDelete: "cascade" }),
+  type: loyaltyTransactionTypeEnum("type").notNull(),
+  points: integer("points").notNull().default(0),
+  creditAmount: numeric("credit_amount", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  description: varchar("description", { length: 255 }).notNull(),
+  referenceId: varchar("reference_id", { length: 100 }), // bill ID, order ID, etc.
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 // ─── Relations ─────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ many }) => ({
   addresses: many(userAddresses),
+  loyaltyTransactions: many(loyaltyTransactions),
 }));
 
 export const userAddressesRelations = relations(userAddresses, ({ one }) => ({
   user: one(users, {
     fields: [userAddresses.userId],
+    references: [users.userId],
+  }),
+}));
+
+export const loyaltyTransactionsRelations = relations(loyaltyTransactions, ({ one }) => ({
+  user: one(users, {
+    fields: [loyaltyTransactions.userId],
     references: [users.userId],
   }),
 }));

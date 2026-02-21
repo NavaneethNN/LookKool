@@ -21,6 +21,7 @@ import { ProductRecommendationStrip } from "@/components/product/recommendation-
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { TrackProductView } from "@/components/product/track-product-view";
 import { Sparkles, ShoppingBag, TrendingUp } from "lucide-react";
+import { getPublicSiteConfig } from "@/lib/site-config";
 
 // Revalidate product pages every 60 seconds
 export const revalidate = 60;
@@ -31,13 +32,15 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = await db.query.products.findFirst({
-    where: eq(products.slug, slug),
-  });
+  const [product, siteConfig] = await Promise.all([
+    db.query.products.findFirst({ where: eq(products.slug, slug) }),
+    getPublicSiteConfig(),
+  ]);
   if (!product) return { title: "Product Not Found" };
+  const storeName = siteConfig.businessName;
   return {
-    title: `${product.productName} – LookKool`,
-    description: product.description || `Buy ${product.productName} at LookKool`,
+    title: `${product.productName} – ${storeName}`,
+    description: product.description || `Buy ${product.productName} at ${storeName}`,
   };
 }
 
@@ -102,6 +105,8 @@ export default async function ProductPage({ params }: PageProps) {
         size: string;
         stockCount: number;
         priceModifier: number;
+        price: number | null;
+        mrp: number | null;
       }[];
       images: { imageId: number; imagePath: string; altText: string | null }[];
     }
@@ -125,6 +130,8 @@ export default async function ProductPage({ params }: PageProps) {
       size: v.size,
       stockCount: v.stockCount,
       priceModifier: parseFloat(v.priceModifier),
+      price: v.price ? parseFloat(v.price) : null,
+      mrp: v.mrp ? parseFloat(v.mrp) : null,
     });
   }
 
@@ -137,11 +144,12 @@ export default async function ProductPage({ params }: PageProps) {
   } = await supabase.auth.getUser();
 
   // Fetch recommendations in parallel
-  const [similarProducts, boughtTogether, trendingProducts] =
+  const [similarProducts, boughtTogether, trendingProducts, siteConfig] =
     await Promise.all([
       getSimilarProducts(product.productId, product.categoryId, 8),
       getFrequentlyBoughtTogether([product.productId], 6),
       getTrendingProducts(8),
+      getPublicSiteConfig(),
     ]);
 
   // Filter trending to exclude current product and similar products
@@ -175,6 +183,7 @@ export default async function ProductPage({ params }: PageProps) {
         )}
         category={category?.categoryName}
         productCode={product.productCode}
+        storeName={siteConfig.businessName}
       />
 
       {/* Breadcrumb */}

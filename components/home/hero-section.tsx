@@ -1,29 +1,40 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { PublicSiteConfig } from "@/lib/site-config-shared";
 
-export function HeroSection() {
+interface HeroSectionProps {
+  siteConfig: PublicSiteConfig;
+}
+
+export function HeroSection({ siteConfig }: HeroSectionProps) {
+  const badgeText = siteConfig.heroBadgeText || "New Collection 2026";
+  const title = siteConfig.heroTitle || `Welcome to ${siteConfig.businessName}`;
+  const subtitle =
+    siteConfig.heroSubtitle ||
+    siteConfig.siteDescription ||
+    "Your go-to boutique for trendy, affordable fashion. From kurtas to dresses, find your perfect look.";
+  const ctaText = siteConfig.heroCtaText || "Shop Now";
+  const ctaLink = siteConfig.heroCtaLink || "/categories/women";
+  const secondaryCtaText = siteConfig.heroSecondaryCtaText || "New Arrivals";
+  const secondaryCtaLink = siteConfig.heroSecondaryCtaLink || "/new-arrivals";
+
   return (
     <section className="relative isolate overflow-hidden">
       {/* Gradient mesh background */}
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(299,76%,92%),transparent)]" />
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.15),transparent)]" />
 
       <div className="container mx-auto px-4 py-20 sm:py-28 lg:py-36">
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary mb-6">
             <Sparkles className="h-3.5 w-3.5" />
-            New Collection 2026
+            {badgeText}
           </div>
           <h1 className="text-balance text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
-            Stay <span className="text-primary">Kool</span>,{" "}
-            Look{" "}
-            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-              Kool
-            </span>
+            {title}
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-            Your go-to women&apos;s boutique for trendy, affordable fashion.
-            From kurtas to dresses, find your perfect look.
+            {subtitle}
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
@@ -31,8 +42,8 @@ export function HeroSection() {
               className="h-12 px-8 text-base shadow-lg shadow-primary/25"
               asChild
             >
-              <Link href="/categories/women">
-                Shop Now
+              <Link href={ctaLink}>
+                {ctaText}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -42,8 +53,8 @@ export function HeroSection() {
               className="h-12 px-8 text-base"
               asChild
             >
-              <Link href="/new-arrivals">
-                New Arrivals
+              <Link href={secondaryCtaLink}>
+                {secondaryCtaText}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

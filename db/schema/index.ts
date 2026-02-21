@@ -39,3 +39,6 @@ export * from "./notifications";
 
 // Configuration & misc
 export * from "./misc";
+
+// Suppliers & purchasing
+export * from "./suppliers";

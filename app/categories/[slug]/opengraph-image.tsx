@@ -2,23 +2,30 @@ import { ImageResponse } from "next/og";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getPublicSiteConfig } from "@/lib/site-config";
 
 export const alt = "Category image";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image({ params }: { params: { slug: string } }) {
-  const [category] = await db
-    .select({
-      categoryName: categories.categoryName,
-      description: categories.description,
-    })
-    .from(categories)
-    .where(eq(categories.slug, params.slug))
-    .limit(1);
+  const [[category], siteConfig] = await Promise.all([
+    db
+      .select({
+        categoryName: categories.categoryName,
+        description: categories.description,
+      })
+      .from(categories)
+      .where(eq(categories.slug, params.slug))
+      .limit(1),
+    getPublicSiteConfig(),
+  ]);
 
   const name = category?.categoryName || "Category";
   const desc = category?.description || "Browse our collection";
+  const brandColor = siteConfig.sitePrimaryColor || "#470B49";
+  const storeName = siteConfig.businessName;
+  const initials = storeName.slice(0, 2).toUpperCase();
 
   return new ImageResponse(
     (
@@ -30,7 +37,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          background: "linear-gradient(135deg, #470B49 0%, #8B2E8E 50%, #470B49 100%)",
+          background: `linear-gradient(135deg, ${brandColor} 0%, ${brandColor} 50%, ${brandColor} 100%)`,
           fontFamily: "sans-serif",
         }}
       >
@@ -59,10 +66,10 @@ export default async function Image({ params }: { params: { slug: string } }) {
               fontWeight: 700,
             }}
           >
-            LK
+            {initials}
           </div>
           <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 22 }}>
-            LookKool
+            {storeName}
           </span>
         </div>
 
@@ -103,7 +110,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
             fontSize: 18,
           }}
         >
-          Shop trendy women&apos;s fashion at LookKool
+          {siteConfig.siteDescription || `Shop at ${storeName}`}
         </div>
       </div>
     ),

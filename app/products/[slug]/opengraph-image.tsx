@@ -2,22 +2,26 @@ import { ImageResponse } from "next/og";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getPublicSiteConfig } from "@/lib/site-config";
 
 export const alt = "Product image";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image({ params }: { params: { slug: string } }) {
-  const [product] = await db
-    .select({
-      productName: products.productName,
-      basePrice: products.basePrice,
-      mrp: products.mrp,
-      label: products.label,
-    })
-    .from(products)
-    .where(eq(products.slug, params.slug))
-    .limit(1);
+  const [[product], siteConfig] = await Promise.all([
+    db
+      .select({
+        productName: products.productName,
+        basePrice: products.basePrice,
+        mrp: products.mrp,
+        label: products.label,
+      })
+      .from(products)
+      .where(eq(products.slug, params.slug))
+      .limit(1),
+    getPublicSiteConfig(),
+  ]);
 
   const name = product?.productName || "Product";
   const price = product ? `₹${parseFloat(product.basePrice).toLocaleString("en-IN")}` : "";
@@ -25,6 +29,11 @@ export default async function Image({ params }: { params: { slug: string } }) {
     ? `₹${parseFloat(product.mrp).toLocaleString("en-IN")}`
     : null;
   const label = product?.label || null;
+  const brandColor = siteConfig.sitePrimaryColor || "#470B49";
+  const storeName = siteConfig.businessName;
+  // derive a slightly lighter shade for the mid-gradient
+  const gradientMid = brandColor; // fallback same color
+  const initials = storeName.slice(0, 2).toUpperCase();
 
   return new ImageResponse(
     (
@@ -36,7 +45,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          background: "linear-gradient(135deg, #470B49 0%, #6B1A6E 50%, #470B49 100%)",
+          background: `linear-gradient(135deg, ${brandColor} 0%, ${gradientMid} 50%, ${brandColor} 100%)`,
           fontFamily: "sans-serif",
         }}
       >
@@ -65,10 +74,10 @@ export default async function Image({ params }: { params: { slug: string } }) {
               fontWeight: 700,
             }}
           >
-            LK
+            {initials}
           </div>
           <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 22 }}>
-            LookKool
+            {storeName}
           </span>
         </div>
 
@@ -140,7 +149,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
             fontSize: 18,
           }}
         >
-          Shop trendy women&apos;s fashion at LookKool
+          {siteConfig.siteDescription || `Shop at ${storeName}`}
         </div>
       </div>
     ),

@@ -1,0 +1,13 @@
+D:\LookKool\src-tauri\target\debug\deps\jsonptr-c7a8860fcb958364.d: C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\lib.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\assign.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\delete.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\resolve.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\pointer.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\token.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\index.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\component.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\../README.md
+
+D:\LookKool\src-tauri\target\debug\deps\libjsonptr-c7a8860fcb958364.rmeta: C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\lib.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\assign.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\delete.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\resolve.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\pointer.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\token.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\index.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\component.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\../README.md
+
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\lib.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\assign.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\delete.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\resolve.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\pointer.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\token.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\index.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\component.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\jsonptr-0.6.3\src\../README.md:

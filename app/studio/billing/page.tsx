@@ -1,6 +1,6 @@
 import { getStoreSettings } from "@/lib/actions/admin-actions";
 import { PageHeader } from "@/components/admin/page-header";
-import { BillingPOS } from "@/components/admin/billing-pos";
+import { BillingPOS } from "@/components/admin/billing-pos-enhanced";
 
 export default async function BillingPage() {
   const settings = await getStoreSettings();

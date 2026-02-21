@@ -1,0 +1,10 @@
+D:\LookKool\src-tauri\target\debug\deps\toml_writer-e1e36c5ee6ad6a74.d: C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\lib.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\integer.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\key.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\string.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\value.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\write.rs
+
+D:\LookKool\src-tauri\target\debug\deps\libtoml_writer-e1e36c5ee6ad6a74.rmeta: C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\lib.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\integer.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\key.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\string.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\value.rs C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\write.rs
+
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\lib.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\integer.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\key.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\string.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\value.rs:
+C:\Users\skyen\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\toml_writer-1.0.6+spec-1.1.0\src\write.rs:

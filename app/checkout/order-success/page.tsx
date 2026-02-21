@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import dynamic from "next/dynamic";
+import { siteConfig } from "@/lib/constants";
 
 const OrderSuccessRecommendations = dynamic(
   () =>
@@ -35,7 +36,7 @@ export default function OrderSuccessPage() {
           <div>
             <h1 className="text-2xl font-bold">Order Placed Successfully!</h1>
             <p className="mt-2 text-muted-foreground">
-              Thank you for shopping with LookKool.
+              Thank you for shopping with {siteConfig.name}.
             </p>
           </div>
 

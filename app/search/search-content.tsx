@@ -44,6 +44,7 @@ interface SearchContentProps {
   products: Product[];
   trendingProducts?: RecommendedProduct[];
   popularProducts?: RecommendedProduct[];
+  storeName?: string;
 }
 
 export function SearchContent({
@@ -53,6 +54,7 @@ export function SearchContent({
   products,
   trendingProducts = [],
   popularProducts = [],
+  storeName = "our store",
 }: SearchContentProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -219,7 +221,7 @@ export function SearchContent({
               <Search className="h-8 w-8 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Search LookKool</h3>
+              <h3 className="text-lg font-semibold">Search {storeName}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Find your perfect outfit by searching for products.
               </p>

@@ -16,15 +16,21 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error, data } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Send welcome email for first-time users (fire-and-forget)
+      // Send welcome email for first-time users only (fire-and-forget)
       try {
         const user = data?.session?.user;
         if (user?.email) {
-          const name =
-            user.user_metadata?.full_name ||
-            user.user_metadata?.name ||
-            user.email.split("@")[0];
-          sendWelcomeEmail({ name, email: user.email }).catch(() => {});
+          // Check created_at — if the user was created within the last 60 seconds, it's a new signup
+          const createdAt = user.created_at ? new Date(user.created_at) : null;
+          const isNewUser = createdAt && Date.now() - createdAt.getTime() < 60_000;
+
+          if (isNewUser) {
+            const name =
+              user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              user.email.split("@")[0];
+            sendWelcomeEmail({ name, email: user.email }).catch(() => {});
+          }
         }
       } catch {
         // ignore

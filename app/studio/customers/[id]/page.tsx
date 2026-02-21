@@ -2,6 +2,7 @@ import { getAdminCustomerDetail } from "@/lib/actions/admin-actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { CustomerRoleToggle } from "@/components/admin/customer-role-toggle";
+import { CustomerLoyaltyCard } from "@/components/admin/customer-loyalty-card";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MapPin, ShoppingCart } from "lucide-react";
@@ -96,7 +97,7 @@ export default async function CustomerDetailPage({
                 <p className="font-medium text-gray-800">
                   {addr.fullName}
                   {addr.isDefault && (
-                    <span className="ml-2 text-xs bg-[#470B49]/10 text-[#470B49] px-1.5 py-0.5 rounded">
+                    <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                       Default
                     </span>
                   )}
@@ -153,6 +154,11 @@ export default async function CustomerDetailPage({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Loyalty & Credit Section */}
+      <div className="grid grid-cols-1 gap-6 mt-6">
+        <CustomerLoyaltyCard userId={customer.userId} />
       </div>
     </>
   );

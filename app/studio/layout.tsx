@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/admin/require-admin";
+import { requireAdminOrCashier } from "@/lib/admin/require-admin";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -12,15 +12,15 @@ export default async function StudioLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const admin = await requireAdmin();
+  const staff = await requireAdminOrCashier();
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <AdminSidebar adminEmail={admin.email} />
+      <AdminSidebar adminEmail={staff.email} role={staff.role} />
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 lg:p-8">{children}</div>
       </main>
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors closeButton />
     </div>
   );
 }

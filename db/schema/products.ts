@@ -61,12 +61,18 @@ export const productVariants = pgTable("productvariants", {
     .notNull()
     .references(() => products.productId, { onDelete: "cascade" }),
   sku: varchar("sku", { length: 100 }),
+  barcode: varchar("barcode", { length: 100 }),
+  costPrice: decimal("cost_price", { precision: 10, scale: 2 }),
   color: varchar("color", { length: 100 }).notNull(),
   // CSS hex color code, e.g. #FFFFFF
   hexcode: char("hexcode", { length: 7 }),
   size: varchar("size", { length: 20 }).notNull(),
   stockCount: integer("stock_count").notNull().default(0),
-  // Added to base_price for this specific variant
+  // Variant-level price — overrides product.basePrice when set
+  price: decimal("price", { precision: 10, scale: 2 }),
+  // Variant-level MRP — overrides product.mrp when set
+  mrp: decimal("mrp", { precision: 10, scale: 2 }),
+  // Legacy: added to base_price (kept for backward compat, prefer price/mrp)
   priceModifier: decimal("price_modifier", { precision: 10, scale: 2 })
     .notNull()
     .default("0.00"),

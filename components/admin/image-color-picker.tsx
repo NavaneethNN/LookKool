@@ -160,7 +160,7 @@ export function ImageColorPicker({
                   onClick={() => setImgSrc(url)}
                   className={`w-12 h-12 rounded-lg border-2 overflow-hidden ${
                     imgSrc === url
-                      ? "border-[#470B49]"
+                      ? "border-primary"
                       : "border-gray-200"
                   }`}
                 >
@@ -175,7 +175,7 @@ export function ImageColorPicker({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center hover:border-[#470B49]/40"
+                className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center hover:border-primary/40"
               >
                 <Upload className="w-4 h-4 text-gray-400" />
               </button>
@@ -235,7 +235,7 @@ export function ImageColorPicker({
               </Button>
               <Button
                 onClick={handleConfirm}
-                className="bg-[#470B49] hover:bg-[#5a1060]"
+                className="bg-primary hover:bg-primary/90"
               >
                 Use This Color
               </Button>

@@ -1,16 +1,14 @@
+import { DEFAULT_CONFIG } from "@/lib/site-config-shared";
+
 export const siteConfig = {
-  name: "LookKool",
-  description:
-    "Your go-to women's boutique for trendy, affordable fashion at LookKool.",
+  name: DEFAULT_CONFIG.businessName,
+  description: DEFAULT_CONFIG.siteDescription,
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   logo: "/NewLogo.png",
-  brandColor: "#470B49",
+  brandColor: DEFAULT_CONFIG.sitePrimaryColor,
 } as const;
 
 export const navLinks = [
   { label: "Home", href: "/" },
-  { label: "Shop All", href: "/categories/women" },
-  { label: "New Arrivals", href: "/new-arrivals" },
-  { label: "Collections", href: "/collections" },
-  { label: "Offers", href: "/offers" },
+  { label: "Shop All", href: "/shop" },
 ] as const;

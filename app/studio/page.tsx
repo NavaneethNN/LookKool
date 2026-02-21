@@ -3,6 +3,8 @@ import {
   getRecentOrders,
   getRevenueChart,
 } from "@/lib/actions/admin-actions";
+import { requireAdminOrCashier } from "@/lib/admin/require-admin";
+import { redirect } from "next/navigation";
 import { StatCard } from "@/components/admin/stat-card";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -20,6 +22,10 @@ import {
 import Link from "next/link";
 
 export default async function StudioDashboard() {
+  // Cashiers should be redirected to the billing page
+  const staff = await requireAdminOrCashier();
+  if (staff.role === "cashier") redirect("/studio/billing");
+
   const [stats, recentOrders, chartData] = await Promise.all([
     getDashboardStats(),
     getRecentOrders(8),
@@ -133,7 +139,7 @@ export default async function StudioDashboard() {
           </h2>
           <Link
             href="/studio/orders"
-            className="text-sm text-[#470B49] hover:underline font-medium"
+            className="text-sm text-primary hover:underline font-medium"
           >
             View all →
           </Link>
@@ -165,7 +171,7 @@ export default async function StudioDashboard() {
                   <td className="px-6 py-4">
                     <Link
                       href={`/studio/orders/${order.orderId}`}
-                      className="text-sm font-medium text-[#470B49] hover:underline"
+                      className="text-sm font-medium text-primary hover:underline"
                     >
                       #{order.orderId}
                     </Link>

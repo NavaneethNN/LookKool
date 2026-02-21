@@ -1,4 +1,56 @@
+﻿import { db } from "@/db";
+import { storeSettings } from "@/db/schema";
+
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+
+// â”€â”€â”€ Store config cache for email templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+interface EmailStoreConfig {
+  storeName: string;
+  storeTagline: string;
+  brandColor: string;
+  senderEmail: string;
+}
+
+let _emailConfigCache: EmailStoreConfig | null = null;
+let _emailConfigTimestamp = 0;
+const CACHE_TTL = 60_000; // 1 minute
+
+async function getEmailStoreConfig(): Promise<EmailStoreConfig> {
+  const now = Date.now();
+  if (_emailConfigCache && now - _emailConfigTimestamp < CACHE_TTL) {
+    return _emailConfigCache;
+  }
+  try {
+    const [row] = await db
+      .select({
+        businessName: storeSettings.businessName,
+        businessTagline: storeSettings.businessTagline,
+        sitePrimaryColor: storeSettings.sitePrimaryColor,
+        email: storeSettings.email,
+      })
+      .from(storeSettings)
+      .limit(1);
+
+    _emailConfigCache = {
+      storeName: row?.businessName || "LookKool",
+      storeTagline: row?.businessTagline || "",
+      brandColor: row?.sitePrimaryColor || "#470B49",
+      senderEmail: process.env.BREVO_SENDER_EMAIL || row?.email || "no-reply@lookkool.in",
+    };
+  } catch {
+    _emailConfigCache = {
+      storeName: "LookKool",
+      storeTagline: "",
+      brandColor: "#470B49",
+      senderEmail: process.env.BREVO_SENDER_EMAIL || "no-reply@lookkool.in",
+    };
+  }
+  _emailConfigTimestamp = now;
+  return _emailConfigCache;
+}
+
+// â”€â”€â”€ Core email sender â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface EmailRecipient {
   email: string;
@@ -15,11 +67,27 @@ interface SendEmailOptions {
 export async function sendEmail(options: SendEmailOptions) {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
-    console.error("BREVO_API_KEY is not set — skipping email");
-    return;
+    console.error("[Brevo] BREVO_API_KEY is not set â€” skipping email");
+    return { success: false, error: "API key missing" };
   }
 
+  const cfg = await getEmailStoreConfig();
+
   try {
+    const payload = {
+      sender: { name: cfg.storeName, email: cfg.senderEmail },
+      to: options.to,
+      subject: options.subject,
+      htmlContent: options.htmlContent,
+      textContent: options.textContent,
+    };
+
+    console.log("[Brevo] Sending email:", {
+      to: options.to.map((t) => t.email),
+      subject: options.subject,
+      from: cfg.senderEmail,
+    });
+
     const res = await fetch(BREVO_API_URL, {
       method: "POST",
       headers: {
@@ -27,27 +95,28 @@ export async function sendEmail(options: SendEmailOptions) {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({
-        sender: { name: "LookKool", email: "no-reply@lookkool.in" },
-        to: options.to,
-        subject: options.subject,
-        htmlContent: options.htmlContent,
-        textContent: options.textContent,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
       const body = await res.text();
-      console.error("Brevo email error:", res.status, body);
+      console.error("[Brevo] Email API error:", res.status, body);
+      return { success: false, error: body };
     }
+
+    const result = await res.json();
+    console.log("[Brevo] Email sent successfully:", result);
+    return { success: true, messageId: result.messageId };
   } catch (err) {
-    console.error("Failed to send email via Brevo:", err);
+    console.error("[Brevo] Failed to send email:", err);
+    return { success: false, error: String(err) };
   }
 }
 
-// ─── Email Templates ───────────────────────────────────────────
+// â”€â”€â”€ Email Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function emailLayout(body: string) {
+function emailLayout(body: string, cfg: EmailStoreConfig) {
+  const c = cfg.brandColor;
   return `
 <!DOCTYPE html>
 <html>
@@ -57,35 +126,35 @@ function emailLayout(body: string) {
   <style>
     body { margin: 0; padding: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { background: #470B49; padding: 24px 32px; text-align: center; }
+    .header { background: ${c}; padding: 24px 32px; text-align: center; }
     .header h1 { color: #ffffff; font-size: 24px; margin: 0; letter-spacing: 2px; }
     .content { padding: 32px; }
     .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; }
-    .btn { display: inline-block; background: #470B49; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; margin: 16px 0; }
+    .btn { display: inline-block; background: ${c}; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; margin: 16px 0; }
     .item-row { border-bottom: 1px solid #f0f0f0; padding: 12px 0; }
-    .total-row { border-top: 2px solid #470B49; padding-top: 12px; margin-top: 8px; font-weight: 700; }
-    h2 { color: #470B49; margin-top: 0; }
+    .total-row { border-top: 2px solid ${c}; padding-top: 12px; margin-top: 8px; font-weight: 700; }
+    h2 { color: ${c}; margin-top: 0; }
     .text-muted { color: #666; font-size: 14px; line-height: 1.6; }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <div class="header">
-      <h1>LOOKKOOL</h1>
+      <h1>${cfg.storeName.toUpperCase()}</h1>
     </div>
     <div class="content">
       ${body}
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} LookKool. All rights reserved.</p>
-      <p>Women&apos;s Boutique — Curated fashion &amp; accessories</p>
+      <p>&copy; ${new Date().getFullYear()} ${cfg.storeName}. All rights reserved.</p>
+      ${cfg.storeTagline ? `<p>${cfg.storeTagline}</p>` : ""}
     </div>
   </div>
 </body>
 </html>`;
 }
 
-// ─── Order Confirmation ────────────────────────────────────────
+// â”€â”€â”€ Order Confirmation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface OrderEmailData {
   orderId: number;
@@ -114,15 +183,18 @@ interface OrderEmailData {
 }
 
 export async function sendOrderConfirmation(data: OrderEmailData) {
+  const cfg = await getEmailStoreConfig();
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
   const itemsHtml = data.items
     .map(
       (item) => `
     <div class="item-row" style="display: flex; justify-content: space-between; align-items: center;">
       <div>
         <strong>${item.productName}</strong><br/>
-        <span style="color: #666; font-size: 13px;">${item.color} / ${item.size} × ${item.quantity}</span>
+        <span style="color: #666; font-size: 13px;">${item.color} / ${item.size} Ã— ${item.quantity}</span>
       </div>
-      <div style="font-weight: 600;">₹${(item.price * item.quantity).toFixed(2)}</div>
+      <div style="font-weight: 600;">â‚¹${(item.price * item.quantity).toFixed(2)}</div>
     </div>`
     )
     .join("");
@@ -135,10 +207,10 @@ export async function sendOrderConfirmation(data: OrderEmailData) {
   `;
 
   const body = `
-    <h2>Order Confirmed! 🎉</h2>
+    <h2>Order Confirmed! ðŸŽ‰</h2>
     <p class="text-muted">
       Hi ${data.customerName},<br/>
-      Thank you for shopping with LookKool! Your order <strong>#${data.orderId}</strong> has been placed successfully.
+      Thank you for shopping with ${cfg.storeName}! Your order <strong>#${data.orderId}</strong> has been placed successfully.
     </p>
 
     <h3 style="margin-top: 24px; color: #333;">Order Summary</h3>
@@ -146,20 +218,20 @@ export async function sendOrderConfirmation(data: OrderEmailData) {
 
     <div style="margin-top: 16px; font-size: 14px;">
       <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-        <span>Subtotal</span><span>₹${data.subtotal.toFixed(2)}</span>
+        <span>Subtotal</span><span>â‚¹${data.subtotal.toFixed(2)}</span>
       </div>
       <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-        <span>Delivery</span><span>${data.deliveryCharge > 0 ? "₹" + data.deliveryCharge.toFixed(2) : "FREE"}</span>
+        <span>Delivery</span><span>${data.deliveryCharge > 0 ? "â‚¹" + data.deliveryCharge.toFixed(2) : "FREE"}</span>
       </div>
       ${
         data.discountAmount > 0
           ? `<div style="display: flex; justify-content: space-between; padding: 4px 0; color: green;">
-              <span>Discount</span><span>-₹${data.discountAmount.toFixed(2)}</span>
+              <span>Discount</span><span>-â‚¹${data.discountAmount.toFixed(2)}</span>
             </div>`
           : ""
       }
       <div class="total-row" style="display: flex; justify-content: space-between; font-size: 16px;">
-        <span>Total</span><span>₹${data.totalAmount.toFixed(2)}</span>
+        <span>Total</span><span>â‚¹${data.totalAmount.toFixed(2)}</span>
       </div>
     </div>
 
@@ -173,7 +245,7 @@ export async function sendOrderConfirmation(data: OrderEmailData) {
     </div>
 
     <p style="text-align: center; margin-top: 24px;">
-      <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://lookkool.in"}/account" class="btn">View My Orders</a>
+      <a href="${siteUrl}/account" class="btn">View My Orders</a>
     </p>
 
     <p class="text-muted" style="margin-top: 24px;">
@@ -183,12 +255,12 @@ export async function sendOrderConfirmation(data: OrderEmailData) {
 
   await sendEmail({
     to: [{ email: data.customerEmail, name: data.customerName }],
-    subject: `LookKool — Order #${data.orderId} Confirmed!`,
-    htmlContent: emailLayout(body),
+    subject: `${cfg.storeName} â€” Order #${data.orderId} Confirmed!`,
+    htmlContent: emailLayout(body, cfg),
   });
 }
 
-// ─── Shipping Update ───────────────────────────────────────────
+// â”€â”€â”€ Shipping Update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function sendShippingUpdate(data: {
   customerName: string;
@@ -197,9 +269,12 @@ export async function sendShippingUpdate(data: {
   status: string;
   trackingNumber?: string | null;
 }) {
+  const cfg = await getEmailStoreConfig();
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
   const statusMessages: Record<string, string> = {
     Shipped: "Your order has been shipped and is on its way!",
-    "Out for Delivery": "Great news — your order is out for delivery today!",
+    "Out for Delivery": "Great news â€” your order is out for delivery today!",
     Delivered: "Your order has been delivered. We hope you love it!",
     Cancelled:
       "Your order has been cancelled. If you didn't request this, please contact us.",
@@ -222,18 +297,18 @@ export async function sendShippingUpdate(data: {
     <p><strong>Order #${data.orderId}</strong></p>
     ${trackingHtml}
     <p style="text-align: center; margin-top: 24px;">
-      <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://lookkool.in"}/account" class="btn">Track Order</a>
+      <a href="${siteUrl}/account" class="btn">Track Order</a>
     </p>
   `;
 
   await sendEmail({
     to: [{ email: data.customerEmail, name: data.customerName }],
-    subject: `LookKool — Order #${data.orderId} ${data.status}`,
-    htmlContent: emailLayout(body),
+    subject: `${cfg.storeName} â€” Order #${data.orderId} ${data.status}`,
+    htmlContent: emailLayout(body, cfg),
   });
 }
 
-// ─── Return status ─────────────────────────────────────────────
+// â”€â”€â”€ Return status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function sendReturnStatusEmail(data: {
   customerName: string;
@@ -242,6 +317,9 @@ export async function sendReturnStatusEmail(data: {
   returnStatus: string;
   adminNotes?: string;
 }) {
+  const cfg = await getEmailStoreConfig();
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
   const statusMessages: Record<string, string> = {
     Approved:
       "Your return request has been approved. Please ship the item(s) back to us.",
@@ -271,34 +349,37 @@ export async function sendReturnStatusEmail(data: {
     <p><strong>Order #${data.orderId}</strong></p>
     ${notesHtml}
     <p style="text-align: center; margin-top: 24px;">
-      <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://lookkool.in"}/account" class="btn">View Details</a>
+      <a href="${siteUrl}/account" class="btn">View Details</a>
     </p>
   `;
 
   await sendEmail({
     to: [{ email: data.customerEmail, name: data.customerName }],
-    subject: `LookKool — Return Request ${data.returnStatus}`,
-    htmlContent: emailLayout(body),
+    subject: `${cfg.storeName} â€” Return Request ${data.returnStatus}`,
+    htmlContent: emailLayout(body, cfg),
   });
 }
 
-// ─── Welcome email ─────────────────────────────────────────────
+// â”€â”€â”€ Welcome email â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function sendWelcomeEmail(data: {
   name: string;
   email: string;
 }) {
+  const cfg = await getEmailStoreConfig();
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
   const body = `
-    <h2>Welcome to LookKool! 💜</h2>
+    <h2>Welcome to ${cfg.storeName}! ðŸ’œ</h2>
     <p class="text-muted">
       Hi ${data.name},<br/>
-      Welcome to the LookKool family! We&apos;re thrilled to have you join our women&apos;s boutique community.
+      Welcome to the ${cfg.storeName} family! We&apos;re thrilled to have you join our community.
     </p>
     <p class="text-muted">
-      Explore our curated collection of fashion, accessories, and more — handpicked just for you.
+      Explore our curated collection â€” handpicked just for you.
     </p>
     <p style="text-align: center;">
-      <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://lookkool.in"}" class="btn">Start Shopping</a>
+      <a href="${siteUrl}" class="btn">Start Shopping</a>
     </p>
     <p class="text-muted" style="font-size: 13px; margin-top: 24px;">
       As a new member, keep an eye on your inbox for exclusive offers and early access to new arrivals!
@@ -307,7 +388,7 @@ export async function sendWelcomeEmail(data: {
 
   await sendEmail({
     to: [{ email: data.email, name: data.name }],
-    subject: "Welcome to LookKool! 💜",
-    htmlContent: emailLayout(body),
+    subject: `Welcome to ${cfg.storeName}! ðŸ’œ`,
+    htmlContent: emailLayout(body, cfg),
   });
 }

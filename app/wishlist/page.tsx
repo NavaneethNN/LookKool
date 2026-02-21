@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { WishlistContent } from "./wishlist-content";
 import dynamic from "next/dynamic";
+import { getPublicSiteConfig } from "@/lib/site-config";
 
 const WishlistRecommendations = dynamic(
   () =>
@@ -10,10 +11,13 @@ const WishlistRecommendations = dynamic(
   { ssr: false }
 );
 
-export const metadata: Metadata = {
-  title: "Wishlist – LookKool",
-  description: "Your saved products on LookKool.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const siteConfig = await getPublicSiteConfig();
+  return {
+    title: `Wishlist – ${siteConfig.businessName}`,
+    description: `Your saved products on ${siteConfig.businessName}.`,
+  };
+}
 
 export default function WishlistPage() {
   return (

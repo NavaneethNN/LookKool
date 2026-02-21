@@ -53,7 +53,7 @@ export default async function CouponsPage() {
                     <div className="flex items-center gap-1 text-sm font-medium">
                       {c.discountType === "percentage" ? (
                         <>
-                          <TicketPercent className="w-3.5 h-3.5 text-[#470B49]" />
+                          <TicketPercent className="w-3.5 h-3.5 text-primary" />
                           {Number(c.discountValue)}%
                           {c.maxDiscountAmount && (
                             <span className="text-xs text-gray-400 ml-1">
@@ -63,7 +63,7 @@ export default async function CouponsPage() {
                         </>
                       ) : (
                         <>
-                          <IndianRupee className="w-3.5 h-3.5 text-[#470B49]" />
+                          <IndianRupee className="w-3.5 h-3.5 text-primary" />
                           {Number(c.discountValue)}
                         </>
                       )}

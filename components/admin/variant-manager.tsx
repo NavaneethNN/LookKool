@@ -59,6 +59,8 @@ interface Variant {
   size: string;
   stockCount: number;
   priceModifier: string;
+  price: string | null;
+  mrp: string | null;
   images?: VariantImage[];
 }
 
@@ -129,7 +131,9 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
   const [editForm, setEditForm] = useState<{
     sku: string;
     priceModifier: string;
-  }>({ sku: "", priceModifier: "0.00" });
+    price: string;
+    mrp: string;
+  }>({ sku: "", priceModifier: "0.00", price: "", mrp: "" });
 
   // Add color dialog
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -141,6 +145,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
     sizes: "XS, S, M, L, XL, XXL",
     stockCount: 10,
     priceModifier: "0.00",
+    price: "",
+    mrp: "",
   });
   const [singleForm, setSingleForm] = useState({
     color: "",
@@ -149,6 +155,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
     size: "",
     stockCount: 0,
     priceModifier: "0.00",
+    price: "",
+    mrp: "",
   });
 
   // ── Group variants by color ────────────────────────────────
@@ -251,6 +259,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
     setEditForm({
       sku: variant.sku || "",
       priceModifier: variant.priceModifier || "0.00",
+      price: variant.price || "",
+      mrp: variant.mrp || "",
     });
   }
 
@@ -260,6 +270,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
         await updateVariant(variantId, {
           sku: editForm.sku || undefined,
           priceModifier: editForm.priceModifier,
+          price: editForm.price || null,
+          mrp: editForm.mrp || null,
         });
         toast.success("Variant updated");
         setEditingVariant(null);
@@ -290,6 +302,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
             sizes,
             stockCount: bulkForm.stockCount,
             priceModifier: bulkForm.priceModifier,
+            price: bulkForm.price || undefined,
+            mrp: bulkForm.mrp || undefined,
           },
         ]);
         toast.success(`${result.created} variant(s) created`);
@@ -303,6 +317,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
           sizes: "XS, S, M, L, XL, XXL",
           stockCount: 10,
           priceModifier: "0.00",
+          price: "",
+          mrp: "",
         });
       } catch {
         toast.error("Failed to create variants");
@@ -325,6 +341,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
           size: singleForm.size,
           stockCount: singleForm.stockCount,
           priceModifier: singleForm.priceModifier,
+          price: singleForm.price || undefined,
+          mrp: singleForm.mrp || undefined,
         });
         toast.success("Variant created");
         setAddDialogOpen(false);
@@ -336,6 +354,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
           size: "",
           stockCount: 0,
           priceModifier: "0.00",
+          price: "",
+          mrp: "",
         });
       } catch {
         toast.error("Failed to create variant");
@@ -432,7 +452,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Package className="w-5 h-5 text-[#470B49]" />
+              <Package className="w-5 h-5 text-primary" />
               Variants
               <Badge variant="secondary" className="ml-1 text-xs">
                 {stats.total}
@@ -484,7 +504,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
               <DialogTrigger asChild>
                 <Button
                   size="sm"
-                  className="bg-[#470B49] hover:bg-[#5a1060]"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   <Plus className="w-4 h-4 mr-1.5" />
                   Add Variants
@@ -575,7 +595,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                         Each size becomes a separate variant
                       </p>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-sm font-medium text-gray-700 mb-1.5 block">
                           SKU Prefix
@@ -609,17 +629,32 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                          Price ± (₹)
+                          Selling Price (₹)
                         </label>
                         <Input
-                          value={bulkForm.priceModifier}
+                          value={bulkForm.price}
                           onChange={(e) =>
                             setBulkForm((p) => ({
                               ...p,
-                              priceModifier: e.target.value,
+                              price: e.target.value,
                             }))
                           }
-                          placeholder="0.00"
+                          placeholder="Leave empty = product price"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                          MRP (₹)
+                        </label>
+                        <Input
+                          value={bulkForm.mrp}
+                          onChange={(e) =>
+                            setBulkForm((p) => ({
+                              ...p,
+                              mrp: e.target.value,
+                            }))
+                          }
+                          placeholder="Leave empty = product MRP"
                         />
                       </div>
                     </div>
@@ -665,7 +700,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                         onClick={handleBulkCreate}
                         disabled={isPending || !bulkForm.color}
                         size="sm"
-                        className="bg-[#470B49] hover:bg-[#5a1060]"
+                        className="bg-primary hover:bg-primary/90"
                       >
                         {isPending
                           ? "Creating..."
@@ -760,17 +795,32 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                          Price ± (₹)
+                          Selling Price (₹)
                         </label>
                         <Input
-                          value={singleForm.priceModifier}
+                          value={singleForm.price}
                           onChange={(e) =>
                             setSingleForm((p) => ({
                               ...p,
-                              priceModifier: e.target.value,
+                              price: e.target.value,
                             }))
                           }
-                          placeholder="0.00"
+                          placeholder="Product price"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                          MRP (₹)
+                        </label>
+                        <Input
+                          value={singleForm.mrp}
+                          onChange={(e) =>
+                            setSingleForm((p) => ({
+                              ...p,
+                              mrp: e.target.value,
+                            }))
+                          }
+                          placeholder="Product MRP"
                         />
                       </div>
                     </div>
@@ -788,7 +838,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                           !singleForm.size
                         }
                         size="sm"
-                        className="bg-[#470B49] hover:bg-[#5a1060]"
+                        className="bg-primary hover:bg-primary/90"
                       >
                         {isPending ? "Creating..." : "Create Variant"}
                       </Button>
@@ -1035,7 +1085,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                                   <button
                                     type="button"
                                     onClick={() => startEditing(variant)}
-                                    className="p-1 text-gray-400 hover:text-[#470B49] rounded transition-colors"
+                                    className="p-1 text-gray-400 hover:text-primary rounded transition-colors"
                                     title="Edit SKU & price"
                                   >
                                     <Edit2 className="w-3 h-3" />
@@ -1121,17 +1171,33 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                                 </div>
                                 <div>
                                   <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
-                                    Price ±
+                                    Price (₹)
                                   </label>
                                   <Input
-                                    value={editForm.priceModifier}
+                                    value={editForm.price}
                                     onChange={(e) =>
                                       setEditForm((p) => ({
                                         ...p,
-                                        priceModifier: e.target.value,
+                                        price: e.target.value,
                                       }))
                                     }
-                                    placeholder="0.00"
+                                    placeholder="Product price"
+                                    className="h-7 text-xs mt-0.5"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                                    MRP (₹)
+                                  </label>
+                                  <Input
+                                    value={editForm.mrp}
+                                    onChange={(e) =>
+                                      setEditForm((p) => ({
+                                        ...p,
+                                        mrp: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Product MRP"
                                     className="h-7 text-xs mt-0.5"
                                   />
                                 </div>
@@ -1144,7 +1210,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                                       )
                                     }
                                     disabled={isPending}
-                                    className="flex-1 flex items-center justify-center gap-1 py-1 text-xs bg-[#470B49] text-white rounded hover:bg-[#5a1060] transition-colors disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-1 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
                                   >
                                     <Check className="w-3 h-3" />
                                     Save
@@ -1175,17 +1241,21 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
                                     {variant.sku}
                                   </p>
                                 )}
-                                {Number(variant.priceModifier) !== 0 && (
-                                  <p className="text-[10px] text-gray-500 mt-0.5">
-                                    Price: ₹{variant.priceModifier}
+                                {variant.price && (
+                                  <p className="text-[10px] text-gray-700 mt-0.5 font-semibold">
+                                    ₹{parseFloat(variant.price).toLocaleString("en-IN")}
+                                    {variant.mrp && parseFloat(variant.mrp) > parseFloat(variant.price) && (
+                                      <span className="text-gray-400 line-through ml-1 font-normal">
+                                        ₹{parseFloat(variant.mrp).toLocaleString("en-IN")}
+                                      </span>
+                                    )}
                                   </p>
                                 )}
-                                {!variant.sku &&
-                                  Number(variant.priceModifier) === 0 && (
-                                    <p className="text-[10px] text-gray-300 italic">
-                                      No SKU set
-                                    </p>
-                                  )}
+                                {!variant.sku && !variant.price && (
+                                  <p className="text-[10px] text-gray-300 italic">
+                                    Uses product price
+                                  </p>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1222,7 +1292,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
             <Button
               onClick={() => setAddDialogOpen(true)}
               size="sm"
-              className="bg-[#470B49] hover:bg-[#5a1060]"
+              className="bg-primary hover:bg-primary/90"
             >
               <Plus className="w-4 h-4 mr-1.5" />
               Add Your First Variants
@@ -1283,7 +1353,7 @@ function AddSizeCard({
       <button
         type="button"
         onClick={() => setIsAdding(true)}
-        className="rounded-lg border-2 border-dashed border-gray-200 p-3 flex flex-col items-center justify-center gap-1 hover:border-[#470B49]/40 hover:bg-white transition-all min-h-[120px] cursor-pointer"
+        className="rounded-lg border-2 border-dashed border-gray-200 p-3 flex flex-col items-center justify-center gap-1 hover:border-primary/40 hover:bg-white transition-all min-h-[120px] cursor-pointer"
       >
         <Plus className="w-5 h-5 text-gray-400" />
         <span className="text-xs text-gray-400">Add Size</span>
@@ -1292,7 +1362,7 @@ function AddSizeCard({
   }
 
   return (
-    <div className="rounded-lg border-2 border-[#470B49]/30 bg-white p-3 space-y-2">
+    <div className="rounded-lg border-2 border-primary/30 bg-white p-3 space-y-2">
       <div>
         <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
           Size
@@ -1323,7 +1393,7 @@ function AddSizeCard({
           type="button"
           onClick={handleAdd}
           disabled={isPending || !size.trim()}
-          className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs bg-[#470B49] text-white rounded hover:bg-[#5a1060] transition-colors disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs bg-primary text-white rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           <Check className="w-3 h-3" />
           Add

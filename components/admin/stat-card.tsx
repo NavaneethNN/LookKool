@@ -27,8 +27,8 @@ export function StatCard({
     >
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-gray-500">{title}</p>
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#470B49]/10">
-          <Icon className="w-5 h-5 text-[#470B49]" />
+        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+          <Icon className="w-5 h-5 text-primary" />
         </div>
       </div>
       <p className="mt-3 text-2xl font-bold text-gray-900">{value}</p>

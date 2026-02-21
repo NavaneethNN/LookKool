@@ -45,7 +45,7 @@ export function RichTextEditor({
       Underline,
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: "text-[#470B49] underline" },
+        HTMLAttributes: { class: "text-primary underline" },
       }),
     ],
     content: value,
@@ -250,7 +250,7 @@ function ToolbarBtn({
       className={cn(
         "inline-flex items-center justify-center rounded p-1.5 text-sm transition-colors",
         active
-          ? "bg-[#470B49] text-white"
+          ? "bg-primary text-white"
           : "text-gray-600 hover:bg-gray-200/70",
         disabled && "opacity-40 cursor-not-allowed"
       )}

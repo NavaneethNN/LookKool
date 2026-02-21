@@ -26,7 +26,7 @@ export default async function CustomersPage({
             name="search"
             defaultValue={searchParams.search ?? ""}
             placeholder="Search by name or email..."
-            className="w-full h-10 rounded-lg border border-input bg-white px-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#470B49]/20 focus:border-[#470B49]"
+            className="w-full h-10 rounded-lg border border-input bg-white px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </form>
       </div>
@@ -100,7 +100,7 @@ export default async function CustomersPage({
                   <td className="px-6 py-4 text-right">
                     <Link
                       href={`/studio/customers/${customer.userId}`}
-                      className="text-sm text-[#470B49] hover:underline"
+                      className="text-sm text-primary hover:underline"
                     >
                       View
                     </Link>

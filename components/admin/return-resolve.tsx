@@ -110,7 +110,7 @@ export function ReturnResolve({
             <Button
               disabled={loading || !status}
               onClick={handleSubmit}
-              className="bg-[#470B49] hover:bg-[#5a1260]"
+              className="bg-primary hover:bg-primary/90"
             >
               {loading ? "Updating..." : "Update Status"}
             </Button>

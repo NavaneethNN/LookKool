@@ -45,7 +45,7 @@ export function ProductRecommendationStrip({
     variant === "muted"
       ? "bg-muted/50 rounded-2xl p-6 sm:p-8"
       : variant === "accent"
-      ? "bg-gradient-to-r from-[#470B49]/5 to-purple-50 rounded-2xl p-6 sm:p-8"
+      ? "bg-gradient-to-r from-primary/5 to-primary/[0.02] rounded-2xl p-6 sm:p-8"
       : "";
 
   const gridColClass =

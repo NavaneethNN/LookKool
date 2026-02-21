@@ -81,7 +81,7 @@ export function DeliverySettingForm({ setting }: { setting?: Setting }) {
       <Button
         size="sm"
         onClick={() => setShowForm(true)}
-        className="bg-[#470B49] hover:bg-[#5a1260]"
+        className="bg-primary hover:bg-primary/90"
       >
         <Plus className="w-4 h-4 mr-1" /> Add Rule
       </Button>
@@ -161,7 +161,7 @@ export function DeliverySettingForm({ setting }: { setting?: Setting }) {
         <Button
           type="submit"
           disabled={loading}
-          className="bg-[#470B49] hover:bg-[#5a1260]"
+          className="bg-primary hover:bg-primary/90"
           size="sm"
         >
           {loading ? "Saving..." : isEdit ? "Update" : "Create Rule"}

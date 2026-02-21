@@ -45,7 +45,7 @@ export default async function ReturnsPage({
             href={`/studio/returns${s === "all" ? "" : `?status=${s}`}`}
             className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${
               (s === "all" && !status) || s === status
-                ? "bg-[#470B49] text-white"
+                ? "bg-primary text-white"
                 : "bg-white text-gray-600 border hover:bg-gray-50"
             }`}
           >
@@ -75,7 +75,7 @@ export default async function ReturnsPage({
                 <TableCell>
                   <Link
                     href={`/studio/orders/${r.orderId}`}
-                    className="text-[#470B49] hover:underline font-medium"
+                    className="text-primary hover:underline font-medium"
                   >
                     #{r.orderId}
                   </Link>

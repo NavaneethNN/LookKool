@@ -35,7 +35,7 @@ export default async function OrdersPage({
             href={`/studio/orders${s === "all" ? "" : `?status=${s}`}`}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               status === s
-                ? "bg-[#470B49] text-white"
+                ? "bg-primary text-white"
                 : "bg-white text-gray-600 border hover:bg-gray-50"
             }`}
           >
@@ -79,7 +79,7 @@ export default async function OrdersPage({
                   <td className="px-6 py-4">
                     <Link
                       href={`/studio/orders/${order.orderId}`}
-                      className="text-sm font-semibold text-[#470B49] hover:underline"
+                      className="text-sm font-semibold text-primary hover:underline"
                     >
                       #{order.orderId}
                     </Link>

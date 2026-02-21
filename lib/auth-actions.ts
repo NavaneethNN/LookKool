@@ -2,16 +2,40 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+
+// ─── Constants ─────────────────────────────────────────────────
+
+const MAX_EMAIL_LENGTH = 254;
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 128;
+const MAX_NAME_LENGTH = 150;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ─── Email / Password ────────────────────────────────────────
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
 
-  const email = formData.get("email") as string;
+  const email = (formData.get("email") as string)?.trim();
   const password = formData.get("password") as string;
-  const fullName = formData.get("fullName") as string;
+  const fullName = (formData.get("fullName") as string)?.trim();
+
+  // ─── Input validation ─────────────────────────────────────
+  if (!email || !password || !fullName) {
+    return redirect(`/sign-up?error=${encodeURIComponent("All fields are required")}`);
+  }
+  if (email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(email)) {
+    return redirect(`/sign-up?error=${encodeURIComponent("Please enter a valid email address")}`);
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return redirect(`/sign-up?error=${encodeURIComponent(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`)}`);
+  }
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return redirect(`/sign-up?error=${encodeURIComponent("Password is too long")}`);
+  }
+  if (fullName.length < 2 || fullName.length > MAX_NAME_LENGTH) {
+    return redirect(`/sign-up?error=${encodeURIComponent("Name must be 2–150 characters")}`);
+  }
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -22,7 +46,11 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    return redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
+    // Sanitize error message — don't leak internals
+    const safeMessage = error.message.includes("already registered")
+      ? "An account with this email already exists"
+      : "Sign up failed. Please try again.";
+    return redirect(`/sign-up?error=${encodeURIComponent(safeMessage)}`);
   }
 
   return redirect("/sign-up?message=Check your email to confirm your account");
@@ -31,13 +59,18 @@ export async function signUp(formData: FormData) {
 export async function signIn(formData: FormData) {
   const supabase = await createClient();
 
-  const email = formData.get("email") as string;
+  const email = (formData.get("email") as string)?.trim();
   const password = formData.get("password") as string;
+
+  if (!email || !password) {
+    return redirect(`/sign-in?error=${encodeURIComponent("Email and password are required")}`);
+  }
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
+    // Generic error to prevent user enumeration
+    return redirect(`/sign-in?error=${encodeURIComponent("Invalid email or password")}`);
   }
 
   return redirect("/");
@@ -53,7 +86,8 @@ export async function signOut() {
 
 export async function signInWithGoogle() {
   const supabase = await createClient();
-  const origin = (await headers()).get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // Use environment variable for origin — NEVER trust request headers
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -75,7 +109,7 @@ export async function signInWithGoogle() {
         )}`
       );
     }
-    return redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
+    return redirect(`/sign-in?error=${encodeURIComponent("Sign-in failed. Please try again.")}`);
   }
 
   return redirect(data.url);

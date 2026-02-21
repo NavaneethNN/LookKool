@@ -30,7 +30,7 @@ export async function requireAdmin() {
     redirect("/");
   }
 
-  return { userId: user.id, email: user.email! };
+  return { userId: user.id, email: user.email ?? "" };
 }
 
 /**
@@ -53,5 +53,33 @@ export async function checkAdmin() {
 
   if (!profile || profile.role !== "admin") return null;
 
-  return { userId: user.id, email: user.email! };
+  return { userId: user.id, email: user.email ?? "" };
+}
+
+/**
+ * Checks if the current user is an admin or cashier.
+ * Redirects to "/" if not authenticated or not authorized.
+ * Returns the user's role alongside userId and email.
+ */
+export async function requireAdminOrCashier() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const [profile] = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.userId, user.id))
+    .limit(1);
+
+  if (!profile || (profile.role !== "admin" && profile.role !== "cashier")) {
+    redirect("/");
+  }
+
+  return { userId: user.id, email: user.email ?? "", role: profile.role as "admin" | "cashier" };
 }

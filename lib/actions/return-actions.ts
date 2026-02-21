@@ -22,13 +22,31 @@ async function getAuthUser() {
 export async function submitReturnRequest(formData: FormData) {
   const user = await getAuthUser();
 
-  const orderId = parseInt(formData.get("orderId") as string);
-  const orderItemId = parseInt(formData.get("orderItemId") as string);
+  const rawOrderId = formData.get("orderId") as string;
+  const rawOrderItemId = formData.get("orderItemId") as string;
   const reason = (formData.get("reason") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
 
-  if (!orderId || !orderItemId || !reason) {
+  // ─── Strict input validation ──────────────────────────────
+
+  if (!rawOrderId || !rawOrderItemId || !reason) {
     return { error: "Order item and reason are required" };
+  }
+
+  const orderId = Number(rawOrderId);
+  const orderItemId = Number(rawOrderItemId);
+
+  if (!Number.isInteger(orderId) || orderId < 1) {
+    return { error: "Invalid order" };
+  }
+  if (!Number.isInteger(orderItemId) || orderItemId < 1) {
+    return { error: "Invalid order item" };
+  }
+  if (reason.length < 5 || reason.length > 500) {
+    return { error: "Reason must be 5–500 characters" };
+  }
+  if (description && description.length > 2000) {
+    return { error: "Description must not exceed 2000 characters" };
   }
 
   // Verify the order belongs to this user and is Delivered
@@ -41,6 +59,20 @@ export async function submitReturnRequest(formData: FormData) {
   if (!order) return { error: "Order not found" };
   if (order.status !== "Delivered") {
     return { error: "Returns can only be requested for delivered orders" };
+  }
+
+  // ─── Return window check (7 days from delivery) ──────────
+  const RETURN_WINDOW_DAYS = 7;
+  const deliveredAt = order.updatedAt || order.createdAt;
+  if (deliveredAt) {
+    const daysSinceDelivery = Math.floor(
+      (Date.now() - new Date(deliveredAt).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysSinceDelivery > RETURN_WINDOW_DAYS) {
+      return {
+        error: `Return window has expired. Returns must be requested within ${RETURN_WINDOW_DAYS} days of delivery.`,
+      };
+    }
   }
 
   // Verify item belongs to this order
@@ -92,6 +124,8 @@ export async function submitReturnRequest(formData: FormData) {
 
 export async function getReturnRequestsForOrder(orderId: number) {
   const user = await getAuthUser();
+
+  if (!Number.isInteger(orderId) || orderId < 1) return [];
 
   const requests = await db
     .select()

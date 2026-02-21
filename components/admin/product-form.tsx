@@ -481,7 +481,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
                   isActive: e.target.checked,
                 }))
               }
-              className="h-4 w-4 mt-0.5 rounded border-gray-300 text-[#470B49] focus:ring-[#470B49]"
+              className="h-4 w-4 mt-0.5 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <div>
               <label
@@ -519,7 +519,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           <Button
             type="submit"
             disabled={isPending}
-            className="bg-[#470B49] hover:bg-[#5a1060] gap-2 min-w-[140px]"
+            className="bg-primary hover:bg-primary/90 gap-2 min-w-[140px]"
           >
             {isPending ? (
               <>

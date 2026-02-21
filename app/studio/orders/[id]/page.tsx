@@ -39,7 +39,7 @@ export default async function OrderDetailPage({
             href={`/api/invoice/${order.orderId}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#470B49] text-white hover:bg-[#5c1060] transition-colors ml-2"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-colors ml-2"
           >
             <Printer className="w-3.5 h-3.5" />
             Invoice
@@ -163,7 +163,7 @@ export default async function OrderDetailPage({
               {order.user?.userId && (
                 <Link
                   href={`/studio/customers/${order.user.userId}`}
-                  className="text-xs text-[#470B49] hover:underline"
+                  className="text-xs text-primary hover:underline"
                 >
                   View customer profile →
                 </Link>

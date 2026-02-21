@@ -154,6 +154,31 @@ export const storeSettings = pgTable("store_settings", {
   footerContactEmail: varchar("footer_contact_email", { length: 150 }),
   footerShowMadeInIndia: boolean("footer_show_made_in_india").notNull().default(true),
 
+  // ── SEO & Open Graph ─────────────────────────────────────────
+  // Custom SEO title (falls back to businessName if empty)
+  seoTitle: varchar("seo_title", { length: 255 }),
+  // Custom meta description (falls back to siteDescription)
+  seoDescription: text("seo_description"),
+  // Comma-separated keywords
+  seoKeywords: text("seo_keywords"),
+  // Open Graph image URL (shown when link is shared on social media)
+  ogImageUrl: varchar("og_image_url", { length: 500 }),
+
+  // ── Social links ─────────────────────────────────────────────
+  socialInstagram: varchar("social_instagram", { length: 255 }),
+  socialFacebook: varchar("social_facebook", { length: 255 }),
+  socialTwitter: varchar("social_twitter", { length: 255 }),
+  socialYoutube: varchar("social_youtube", { length: 255 }),
+
+  // ── Hero / Banner section ────────────────────────────────────
+  heroTitle: varchar("hero_title", { length: 255 }),
+  heroSubtitle: text("hero_subtitle"),
+  heroBadgeText: varchar("hero_badge_text", { length: 100 }),
+  heroCtaText: varchar("hero_cta_text", { length: 100 }),
+  heroCtaLink: varchar("hero_cta_link", { length: 255 }),
+  heroSecondaryCtaText: varchar("hero_secondary_cta_text", { length: 100 }),
+  heroSecondaryCtaLink: varchar("hero_secondary_cta_link", { length: 255 }),
+
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

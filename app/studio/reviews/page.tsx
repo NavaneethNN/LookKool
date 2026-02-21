@@ -39,7 +39,7 @@ export default async function ReviewsPage({
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               (f.value === undefined && approved === undefined) ||
               f.value === searchParams.approved
-                ? "bg-[#470B49] text-white"
+                ? "bg-primary text-white"
                 : "bg-white text-gray-600 border hover:bg-gray-50"
             }`}
           >
@@ -94,7 +94,7 @@ export default async function ReviewsPage({
                     Product:{" "}
                     <Link
                       href={`/studio/products/${review.product?.productId}`}
-                      className="text-[#470B49] hover:underline"
+                      className="text-primary hover:underline"
                     >
                       {review.product?.productName ?? "—"}
                     </Link>

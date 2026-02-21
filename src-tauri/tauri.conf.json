@@ -1,0 +1,51 @@
+{
+  "productName": "LookKool Studio",
+  "version": "1.0.0",
+  "identifier": "com.lookkool.studio",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://localhost:3000/studio",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "http://localhost:3000/studio"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "LookKool Studio",
+        "label": "main",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 700,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine",
+        "displayLanguageSelector": false
+      }
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}

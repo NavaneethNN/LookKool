@@ -18,10 +18,21 @@ import {
   storeSettings,
   inStoreBills,
 } from "@/db/schema";
-import { eq, desc, asc, sql, count, sum, and, gte, ilike, or } from "drizzle-orm";
+import { eq, desc, asc, sql, count, sum, and, gte, ilike, or, inArray, max } from "drizzle-orm";
+
+// ── Valid enum values (runtime validation whitelists) ────────
+const VALID_ORDER_STATUSES = ["Pending", "Processing", "Packed", "Shipped", "Delivered", "Cancelled", "Refunded"] as const;
+const VALID_PAYMENT_STATUSES = ["Pending", "Completed", "Failed", "Refunded"] as const;
+const VALID_RETURN_STATUSES = ["Pending", "Approved", "Rejected", "Refunded"] as const;
+
+/** Escape ILIKE special characters */
+function escapeIlike(str: string): string {
+  return str.replace(/[%_\\]/g, (ch) => "\\" + ch);
+}
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/admin/require-admin";
+import { requireAdmin, requireAdminOrCashier } from "@/lib/admin/require-admin";
 import { sendShippingUpdate, sendReturnStatusEmail } from "@/lib/email/brevo";
+import { createNotification } from "@/lib/actions/notification-actions";
 
 // ═══════════════════════════════════════════════════════════════
 // DASHBOARD
@@ -67,9 +78,11 @@ export async function getDashboardStats() {
 export async function getRecentOrders(limit = 10) {
   await requireAdmin();
 
+  const safeLimit = Math.min(Math.max(1, limit), 100);
+
   return db.query.orders.findMany({
     orderBy: [desc(orders.orderDate)],
-    limit,
+    limit: safeLimit,
     with: {
       user: { columns: { name: true, email: true } },
       items: { columns: { orderItemId: true } },
@@ -120,7 +133,19 @@ export async function getAdminOrders(params?: {
 
   const conditions = [];
   if (params?.status && params.status !== "all") {
+    if (!VALID_ORDER_STATUSES.includes(params.status as typeof VALID_ORDER_STATUSES[number])) {
+      throw new Error("Invalid order status filter");
+    }
     conditions.push(eq(orders.status, params.status as typeof orders.status.enumValues[number]));
+  }
+  if (params?.search) {
+    const escaped = escapeIlike(params.search);
+    conditions.push(
+      or(
+        ilike(orders.shippingName, `%${escaped}%`),
+        sql`CAST(${orders.orderId} AS TEXT) ILIKE ${`%${escaped}%`}`
+      )
+    );
   }
 
   const allOrders = await db.query.orders.findMany({
@@ -175,6 +200,10 @@ export async function getAdminOrderDetail(orderId: number) {
 export async function updateOrderStatus(orderId: number, status: string) {
   await requireAdmin();
 
+  if (!VALID_ORDER_STATUSES.includes(status as typeof VALID_ORDER_STATUSES[number])) {
+    throw new Error("Invalid order status");
+  }
+
   await db
     .update(orders)
     .set({
@@ -212,6 +241,21 @@ export async function updateOrderStatus(orderId: number, status: string) {
             trackingNumber: order.trackingNumber,
           }).catch((err) => console.error("Shipping email failed:", err));
         }
+
+        // Create in-app notification for the customer
+        const statusMessages: Record<string, string> = {
+          Shipped: "Your order has been shipped!",
+          "Out for Delivery": "Your order is out for delivery today!",
+          Delivered: "Your order has been delivered. Enjoy!",
+          Cancelled: "Your order has been cancelled.",
+        };
+        createNotification({
+          userId: order.userId,
+          type: "order",
+          title: `Order #${orderId} ${status}`,
+          message: statusMessages[status] || `Order status updated to ${status}`,
+          data: { orderId, status },
+        }).catch((err) => console.error("Notification creation failed:", err));
       }
     } catch (err) {
       console.error("Failed to send status email:", err);
@@ -225,6 +269,10 @@ export async function updateOrderStatus(orderId: number, status: string) {
 
 export async function updatePaymentStatus(orderId: number, status: string) {
   await requireAdmin();
+
+  if (!VALID_PAYMENT_STATUSES.includes(status as typeof VALID_PAYMENT_STATUSES[number])) {
+    throw new Error("Invalid payment status");
+  }
 
   await db
     .update(orders)
@@ -289,10 +337,11 @@ export async function getAdminProducts(params?: {
 
   const conditions = [];
   if (params?.search) {
+    const escaped = escapeIlike(params.search);
     conditions.push(
       or(
-        ilike(products.productName, `%${params.search}%`),
-        ilike(products.productCode, `%${params.search}%`)
+        ilike(products.productName, `%${escaped}%`),
+        ilike(products.productCode, `%${escaped}%`)
       )
     );
   }
@@ -449,6 +498,15 @@ export async function updateProduct(
 export async function deleteProduct(productId: number) {
   await requireAdmin();
 
+  // Safety check: ensure no order items reference this product
+  const [orderItemRef] = await db
+    .select({ count: count() })
+    .from(orderItems)
+    .where(eq(orderItems.productId, productId));
+  if (orderItemRef && orderItemRef.count > 0) {
+    throw new Error("Cannot delete product with existing order items. Deactivate it instead.");
+  }
+
   await db.delete(products).where(eq(products.productId, productId));
 
   revalidatePath("/studio/products");
@@ -478,6 +536,8 @@ export async function bulkCreateVariants(
     sizes: string[];
     stockCount: number;
     priceModifier?: string;
+    price?: string;
+    mrp?: string;
   }[]
 ) {
   await requireAdmin();
@@ -495,6 +555,8 @@ export async function bulkCreateVariants(
           size,
           stockCount: v.stockCount,
           priceModifier: v.priceModifier || "0.00",
+          price: v.price || null,
+          mrp: v.mrp || null,
         })
         .returning({ variantId: productVariants.variantId, color: productVariants.color, size: productVariants.size });
       created.push(row);
@@ -531,6 +593,8 @@ export async function createVariant(data: {
   size: string;
   stockCount: number;
   priceModifier?: string;
+  price?: string;
+  mrp?: string;
 }) {
   await requireAdmin();
 
@@ -544,6 +608,8 @@ export async function createVariant(data: {
       size: data.size,
       stockCount: data.stockCount,
       priceModifier: data.priceModifier || "0.00",
+      price: data.price || null,
+      mrp: data.mrp || null,
     })
     .returning();
 
@@ -560,6 +626,8 @@ export async function updateVariant(
     size?: string;
     stockCount?: number;
     priceModifier?: string;
+    price?: string | null;
+    mrp?: string | null;
   }
 ) {
   await requireAdmin();
@@ -575,6 +643,15 @@ export async function updateVariant(
 
 export async function deleteVariant(variantId: number) {
   await requireAdmin();
+
+  // Safety check: ensure no order items reference this variant
+  const [orderItemRef] = await db
+    .select({ count: count() })
+    .from(orderItems)
+    .where(eq(orderItems.variantId, variantId));
+  if (orderItemRef && orderItemRef.count > 0) {
+    throw new Error("Cannot delete variant with existing order items.");
+  }
 
   await db.delete(productVariants).where(eq(productVariants.variantId, variantId));
 
@@ -612,6 +689,13 @@ export async function addVariantImage(
       .where(eq(productImages.variantId, variantId));
   }
 
+  // Get next sortOrder
+  const [maxSort] = await db
+    .select({ maxOrder: max(productImages.sortOrder) })
+    .from(productImages)
+    .where(eq(productImages.variantId, variantId));
+  const nextSort = (maxSort?.maxOrder ?? -1) + 1;
+
   const [img] = await db
     .insert(productImages)
     .values({
@@ -619,7 +703,7 @@ export async function addVariantImage(
       imagePath,
       isPrimary,
       altText: altText || null,
-      sortOrder: 0,
+      sortOrder: nextSort,
     })
     .returning();
 
@@ -642,6 +726,16 @@ export async function setVariantPrimaryImage(
 ) {
   await requireAdmin();
 
+  // Verify image belongs to this variant
+  const [image] = await db
+    .select({ variantId: productImages.variantId })
+    .from(productImages)
+    .where(eq(productImages.imageId, imageId))
+    .limit(1);
+  if (!image || image.variantId !== variantId) {
+    throw new Error("Image does not belong to this variant");
+  }
+
   await db
     .update(productImages)
     .set({ isPrimary: false })
@@ -662,6 +756,16 @@ export async function bulkDeleteProducts(productIds: number[]) {
   await requireAdmin();
 
   if (productIds.length === 0) return { success: true, deleted: 0 };
+  if (productIds.length > 100) throw new Error("Too many products to delete at once (max 100)");
+
+  // Safety check: ensure no order items reference these products
+  const [orderItemRef] = await db
+    .select({ count: count() })
+    .from(orderItems)
+    .where(inArray(orderItems.productId, productIds));
+  if (orderItemRef && orderItemRef.count > 0) {
+    throw new Error("Cannot delete products with existing order items. Deactivate them instead.");
+  }
 
   for (const id of productIds) {
     await db.delete(products).where(eq(products.productId, id));
@@ -755,6 +859,8 @@ export async function duplicateProduct(productId: number) {
         size: variant.size,
         stockCount: 0, // Start with 0 stock
         priceModifier: variant.priceModifier,
+        price: variant.price,
+        mrp: variant.mrp,
       })
       .returning();
 
@@ -806,6 +912,8 @@ export async function getProductStockSummary(productId: number) {
 export async function getLowStockProducts(threshold: number = 5) {
   await requireAdmin();
 
+  const safeThreshold = Math.min(Math.max(0, threshold), 100);
+
   const allProducts = await db.query.products.findMany({
     where: eq(products.isActive, true),
     with: {
@@ -819,16 +927,16 @@ export async function getLowStockProducts(threshold: number = 5) {
 
   return allProducts
     .filter((p) =>
-      p.variants.some((v) => v.stockCount <= threshold)
+      p.variants.some((v) => v.stockCount <= safeThreshold)
     )
     .map((p) => ({
       productId: p.productId,
       productName: p.productName,
       productCode: p.productCode,
       category: p.category?.categoryName ?? "—",
-      variants: p.variants.filter((v) => v.stockCount <= threshold),
+      variants: p.variants.filter((v) => v.stockCount <= safeThreshold),
       totalVariants: p.variants.length,
-      lowStockCount: p.variants.filter((v) => v.stockCount > 0 && v.stockCount <= threshold).length,
+      lowStockCount: p.variants.filter((v) => v.stockCount > 0 && v.stockCount <= safeThreshold).length,
       outOfStockCount: p.variants.filter((v) => v.stockCount === 0).length,
     }));
 }
@@ -902,6 +1010,24 @@ export async function updateCategory(
 export async function deleteCategory(categoryId: number) {
   await requireAdmin();
 
+  // Safety check: ensure no products reference this category
+  const [productRef] = await db
+    .select({ count: count() })
+    .from(products)
+    .where(eq(products.categoryId, categoryId));
+  if (productRef && productRef.count > 0) {
+    throw new Error("Cannot delete category with existing products. Move or delete them first.");
+  }
+
+  // Safety check: ensure no child categories reference this category
+  const [childRef] = await db
+    .select({ count: count() })
+    .from(categories)
+    .where(eq(categories.parentCategoryId, categoryId));
+  if (childRef && childRef.count > 0) {
+    throw new Error("Cannot delete category with subcategories. Delete subcategories first.");
+  }
+
   await db.delete(categories).where(eq(categories.categoryId, categoryId));
 
   revalidatePath("/studio/categories");
@@ -924,10 +1050,11 @@ export async function getAdminCustomers(params?: {
 
   const conditions = [];
   if (params?.search) {
+    const escaped = escapeIlike(params.search);
     conditions.push(
       or(
-        ilike(users.name, `%${params.search}%`),
-        ilike(users.email, `%${params.search}%`)
+        ilike(users.name, `%${escaped}%`),
+        ilike(users.email, `%${escaped}%`)
       )
     );
   }
@@ -986,8 +1113,13 @@ export async function getAdminCustomerDetail(userId: string) {
   return { customer, addresses, orders: customerOrders };
 }
 
-export async function updateUserRole(userId: string, role: "customer" | "admin") {
+export async function updateUserRole(userId: string, role: "customer" | "admin" | "cashier") {
   await requireAdmin();
+
+  const validRoles = ["customer", "admin", "cashier"] as const;
+  if (!validRoles.includes(role)) {
+    throw new Error("Invalid role");
+  }
 
   await db
     .update(users)
@@ -1090,6 +1222,21 @@ export async function createCoupon(data: {
 }) {
   await requireAdmin();
 
+  // Validate discount bounds
+  const discountVal = Number(data.discountValue);
+  if (isNaN(discountVal) || discountVal <= 0) {
+    throw new Error("Discount value must be a positive number");
+  }
+  if (data.discountType === "percentage" && discountVal > 100) {
+    throw new Error("Percentage discount cannot exceed 100%");
+  }
+  if (data.code.trim().length === 0) {
+    throw new Error("Coupon code is required");
+  }
+  if (data.code.trim().length > 50) {
+    throw new Error("Coupon code too long (max 50 chars)");
+  }
+
   const [coupon] = await db
     .insert(coupons)
     .values({
@@ -1130,6 +1277,21 @@ export async function updateCoupon(
   }
 ) {
   await requireAdmin();
+
+  // Validate discount bounds if provided
+  if (data.discountValue !== undefined) {
+    const discountVal = Number(data.discountValue);
+    if (isNaN(discountVal) || discountVal <= 0) {
+      throw new Error("Discount value must be a positive number");
+    }
+    const resolvedType = data.discountType;
+    if (resolvedType === "percentage" && discountVal > 100) {
+      throw new Error("Percentage discount cannot exceed 100%");
+    }
+  }
+  if (data.code !== undefined && data.code.trim().length === 0) {
+    throw new Error("Coupon code is required");
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData: Record<string, any> = { updatedAt: new Date() };
@@ -1192,6 +1354,9 @@ export async function getAdminReturns(params?: {
 
   const conditions = [];
   if (params?.status && params.status !== "all") {
+    if (!VALID_RETURN_STATUSES.includes(params.status as typeof VALID_RETURN_STATUSES[number])) {
+      throw new Error("Invalid return status filter");
+    }
     conditions.push(eq(returnRequests.status, params.status as typeof returnRequests.status.enumValues[number]));
   }
 
@@ -1229,6 +1394,10 @@ export async function resolveReturn(
 ) {
   await requireAdmin();
 
+  if (!VALID_RETURN_STATUSES.includes(status as typeof VALID_RETURN_STATUSES[number])) {
+    throw new Error("Invalid return status");
+  }
+
   await db
     .update(returnRequests)
     .set({
@@ -1261,6 +1430,15 @@ export async function resolveReturn(
           adminNotes: adminNotes,
         }).catch((err) => console.error("Return email failed:", err));
       }
+
+      // Create in-app notification for the customer
+      createNotification({
+        userId: returnReq.userId,
+        type: "order",
+        title: `Return Request ${status}`,
+        message: `Your return request for order #${returnReq.orderId} has been ${status.toLowerCase()}.`,
+        data: { orderId: returnReq.orderId, returnId, status },
+      }).catch((err) => console.error("Notification creation failed:", err));
     }
   } catch (err) {
     console.error("Failed to send return email:", err);
@@ -1446,16 +1624,18 @@ export async function upsertStoreSettings(data: {
 // ═══════════════════════════════════════════════════════════════
 
 export async function searchProductsForBilling(query: string) {
-  await requireAdmin();
+  await requireAdminOrCashier();
 
   if (!query || query.length < 2) return [];
+
+  const escaped = escapeIlike(query);
 
   const results = await db.query.products.findMany({
     where: and(
       eq(products.isActive, true),
       or(
-        ilike(products.productName, `%${query}%`),
-        ilike(products.productCode, `%${query}%`)
+        ilike(products.productName, `%${escaped}%`),
+        ilike(products.productCode, `%${escaped}%`)
       )
     ),
     limit: 10,
@@ -1468,6 +1648,8 @@ export async function searchProductsForBilling(query: string) {
           stockCount: true,
           sku: true,
           priceModifier: true,
+          price: true,
+          mrp: true,
         },
       },
     },
@@ -1499,6 +1681,24 @@ export async function upsertSiteAppearance(data: {
   footerContactPhone?: string | null;
   footerContactEmail?: string | null;
   footerShowMadeInIndia?: boolean;
+  // SEO
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoKeywords?: string | null;
+  ogImageUrl?: string | null;
+  // Social
+  socialInstagram?: string | null;
+  socialFacebook?: string | null;
+  socialTwitter?: string | null;
+  socialYoutube?: string | null;
+  // Hero
+  heroTitle?: string | null;
+  heroSubtitle?: string | null;
+  heroBadgeText?: string | null;
+  heroCtaText?: string | null;
+  heroCtaLink?: string | null;
+  heroSecondaryCtaText?: string | null;
+  heroSecondaryCtaLink?: string | null;
 }) {
   await requireAdmin();
 
@@ -1514,6 +1714,24 @@ export async function upsertSiteAppearance(data: {
     footerContactPhone: data.footerContactPhone || null,
     footerContactEmail: data.footerContactEmail || null,
     footerShowMadeInIndia: data.footerShowMadeInIndia ?? true,
+    // SEO
+    seoTitle: data.seoTitle || null,
+    seoDescription: data.seoDescription || null,
+    seoKeywords: data.seoKeywords || null,
+    ogImageUrl: data.ogImageUrl || null,
+    // Social
+    socialInstagram: data.socialInstagram || null,
+    socialFacebook: data.socialFacebook || null,
+    socialTwitter: data.socialTwitter || null,
+    socialYoutube: data.socialYoutube || null,
+    // Hero
+    heroTitle: data.heroTitle || null,
+    heroSubtitle: data.heroSubtitle || null,
+    heroBadgeText: data.heroBadgeText || null,
+    heroCtaText: data.heroCtaText || null,
+    heroCtaLink: data.heroCtaLink || null,
+    heroSecondaryCtaText: data.heroSecondaryCtaText || null,
+    heroSecondaryCtaLink: data.heroSecondaryCtaLink || null,
     updatedAt: new Date(),
   };
 
@@ -1549,23 +1767,42 @@ export async function upsertSiteAppearance(data: {
 }
 
 export async function generateInvoiceNumber() {
-  await requireAdmin();
+  await requireAdminOrCashier();
 
-  const [settings] = await db.select().from(storeSettings).limit(1);
-  const prefix = settings?.invoicePrefix ?? "LK";
-  const nextNum = settings?.nextInvoiceNumber ?? 1;
+  // Atomic increment to prevent race conditions with concurrent cashiers
+  const [result] = await db
+    .update(storeSettings)
+    .set({
+      nextInvoiceNumber: sql`${storeSettings.nextInvoiceNumber} + 1`,
+      updatedAt: new Date(),
+    })
+    .returning({
+      invoicePrefix: storeSettings.invoicePrefix,
+      prevNumber: sql<number>`${storeSettings.nextInvoiceNumber} - 1`,
+    });
 
-  const invoiceNumber = `${prefix}-${String(nextNum).padStart(6, "0")}`;
-
-  // Increment the counter
-  if (settings) {
-    await db
-      .update(storeSettings)
-      .set({ nextInvoiceNumber: nextNum + 1, updatedAt: new Date() })
-      .where(eq(storeSettings.settingId, settings.settingId));
+  if (!result) {
+    // No settings row exists yet — create one atomically
+    const [created] = await db
+      .insert(storeSettings)
+      .values({
+        businessName: "LookKool",
+        city: "",
+        state: "Tamil Nadu",
+        stateCode: "33",
+        gstRate: "5.00",
+        hsnCode: "6104",
+        enableGst: true,
+        invoicePrefix: "LK",
+        nextInvoiceNumber: 2, // 1 is used now
+      })
+      .returning({ invoicePrefix: storeSettings.invoicePrefix });
+    return `${created?.invoicePrefix ?? "LK"}-000001`;
   }
 
-  return invoiceNumber;
+  const prefix = result.invoicePrefix ?? "LK";
+  const num = result.prevNumber ?? 1;
+  return `${prefix}-${String(num).padStart(6, "0")}`;
 }
 
 export async function createInStoreBill(data: {
@@ -1587,7 +1824,52 @@ export async function createInStoreBill(data: {
   items: string; // JSON string of line items
   notes?: string;
 }) {
-  const admin = await requireAdmin();
+  const admin = await requireAdminOrCashier();
+
+  // Validate items JSON server-side
+  let parsedItems: Array<{ variantId?: number; quantity: number; productName?: string; rate?: number; amount?: number }>;
+  try {
+    parsedItems = JSON.parse(data.items);
+    if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
+      throw new Error("Items must be a non-empty array");
+    }
+    for (const item of parsedItems) {
+      if (typeof item.quantity !== "number" || item.quantity < 1 || !Number.isInteger(item.quantity)) {
+        throw new Error("Each item must have a valid integer quantity >= 1");
+      }
+    }
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      throw new Error("Invalid items JSON");
+    }
+    throw e;
+  }
+
+  // Validate numeric fields
+  const numericFields = ["subtotal", "discountAmount", "taxableAmount", "cgstAmount", "sgstAmount", "igstAmount", "totalAmount"] as const;
+  for (const field of numericFields) {
+    if (isNaN(Number(data[field]))) {
+      throw new Error(`Invalid numeric value for ${field}`);
+    }
+  }
+
+  // Validate stock availability BEFORE creating the bill
+  const variantItems = parsedItems.filter(item => item.variantId);
+  if (variantItems.length > 0) {
+    const variantIds = variantItems.map(item => item.variantId!).filter(Boolean);
+    const stocks = await db
+      .select({ variantId: productVariants.variantId, stockCount: productVariants.stockCount })
+      .from(productVariants)
+      .where(inArray(productVariants.variantId, variantIds));
+
+    const stockMap = new Map(stocks.map(s => [s.variantId, s.stockCount]));
+    for (const item of variantItems) {
+      const available = stockMap.get(item.variantId!) ?? 0;
+      if (available < item.quantity) {
+        throw new Error(`Insufficient stock for variant ${item.variantId} (available: ${available}, requested: ${item.quantity})`);
+      }
+    }
+  }
 
   const invoiceNumber = await generateInvoiceNumber();
 
@@ -1616,22 +1898,17 @@ export async function createInStoreBill(data: {
     })
     .returning();
 
-  // Deduct stock for each sold item
-  try {
-    const items = JSON.parse(data.items) as Array<{ variantId?: number; quantity: number }>;
-    for (const item of items) {
-      if (item.variantId) {
-        await db
-          .update(productVariants)
-          .set({
-            stockCount: sql`GREATEST(${productVariants.stockCount} - ${item.quantity}, 0)`,
-            updatedAt: new Date(),
-          })
-          .where(eq(productVariants.variantId, item.variantId));
-      }
+  // Deduct stock for each sold item — errors here are critical, not silently swallowed
+  for (const item of parsedItems) {
+    if (item.variantId) {
+      await db
+        .update(productVariants)
+        .set({
+          stockCount: sql`GREATEST(${productVariants.stockCount} - ${item.quantity}, 0)`,
+          updatedAt: new Date(),
+        })
+        .where(eq(productVariants.variantId, item.variantId));
     }
-  } catch {
-    console.error("Failed to deduct stock for in-store bill");
   }
 
   revalidatePath("/studio/billing");
@@ -1639,7 +1916,7 @@ export async function createInStoreBill(data: {
 }
 
 export async function getInStoreBills(params?: { page?: number; search?: string }) {
-  await requireAdmin();
+  await requireAdminOrCashier();
 
   const page = params?.page ?? 1;
   const limit = 20;
@@ -1647,11 +1924,12 @@ export async function getInStoreBills(params?: { page?: number; search?: string 
 
   const conditions = [];
   if (params?.search) {
+    const escaped = escapeIlike(params.search);
     conditions.push(
       or(
-        ilike(inStoreBills.invoiceNumber, `%${params.search}%`),
-        ilike(inStoreBills.customerName, `%${params.search}%`),
-        ilike(inStoreBills.customerPhone, `%${params.search}%`)
+        ilike(inStoreBills.invoiceNumber, `%${escaped}%`),
+        ilike(inStoreBills.customerName, `%${escaped}%`),
+        ilike(inStoreBills.customerPhone, `%${escaped}%`)
       )
     );
   }
@@ -1678,7 +1956,7 @@ export async function getInStoreBills(params?: { page?: number; search?: string 
 }
 
 export async function getInStoreBill(billId: number) {
-  await requireAdmin();
+  await requireAdminOrCashier();
 
   const [bill] = await db
     .select()

@@ -13,8 +13,8 @@ export interface CartItem {
   color: string;
   hexcode: string | null;
   size: string;
-  price: number; // basePrice + priceModifier
-  mrp: number;
+  price: number; // variant price or product basePrice
+  mrp: number;   // variant mrp or product mrp
   image: string;
   quantity: number;
   stock: number;
@@ -80,9 +80,12 @@ export const useCartStore = create<CartState>()(
         get().items.reduce((acc, i) => acc + i.price * i.quantity, 0),
 
       savings: () =>
-        get().items.reduce(
-          (acc, i) => acc + (i.mrp - i.price) * i.quantity,
-          0
+        Math.max(
+          0,
+          get().items.reduce(
+            (acc, i) => acc + (i.mrp - i.price) * i.quantity,
+            0
+          )
         ),
     }),
     {

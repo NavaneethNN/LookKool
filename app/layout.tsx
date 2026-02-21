@@ -24,12 +24,54 @@ const getCachedSiteConfig = cache(getPublicSiteConfig);
 
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getCachedSiteConfig();
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app";
+
+  const title = config.seoTitle || config.businessName;
+  const description =
+    config.seoDescription || config.siteDescription || config.businessName;
+  const keywords = config.seoKeywords
+    ? config.seoKeywords.split(",").map((k) => k.trim())
+    : undefined;
+
   return {
+    metadataBase: new URL(baseUrl),
     title: {
-      default: config.businessName,
+      default: title,
       template: `%s | ${config.businessName}`,
     },
-    description: config.siteDescription ?? config.businessName,
+    description,
+    keywords,
+    openGraph: {
+      type: "website",
+      siteName: config.businessName,
+      title,
+      description,
+      url: baseUrl,
+      ...(config.ogImageUrl && {
+        images: [
+          {
+            url: config.ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: config.businessName,
+          },
+        ],
+      }),
+      ...(config.siteLogoUrl && !config.ogImageUrl && {
+        images: [{ url: config.siteLogoUrl, alt: config.businessName }],
+      }),
+    },
+    twitter: {
+      card: config.ogImageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(config.ogImageUrl && { images: [config.ogImageUrl] }),
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
 }
 
@@ -68,7 +110,7 @@ export default async function RootLayout({
         />
         <main className="flex-1">{children}</main>
         <Footer siteConfig={siteConfig} />
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

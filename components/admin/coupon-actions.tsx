@@ -138,7 +138,7 @@ export function CouponActions({ coupon }: { coupon?: Coupon }) {
                 <Pencil className="w-4 h-4" />
               </Button>
             ) : (
-              <Button size="sm" className="bg-[#470B49] hover:bg-[#5a1260]">
+              <Button size="sm" className="bg-primary hover:bg-primary/90">
                 <Plus className="w-4 h-4 mr-1" /> Add Coupon
               </Button>
             )}
@@ -313,7 +313,7 @@ export function CouponActions({ coupon }: { coupon?: Coupon }) {
               <Button
                 type="submit"
                 disabled={loading}
-                className="bg-[#470B49] hover:bg-[#5a1260]"
+                className="bg-primary hover:bg-primary/90"
               >
                 {loading
                   ? "Saving..."

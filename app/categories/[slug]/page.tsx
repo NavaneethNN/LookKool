@@ -9,6 +9,7 @@ import { getPopularInCategory, getTrendingProducts } from "@/lib/actions/recomme
 import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { TrendingUp, Star } from "lucide-react";
+import { getPublicSiteConfig } from "@/lib/site-config";
 
 // Revalidate category pages every 60 seconds
 export const revalidate = 60;
@@ -20,13 +21,15 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const category = await db.query.categories.findFirst({
-    where: eq(categories.slug, slug),
-  });
+  const [category, siteConfig] = await Promise.all([
+    db.query.categories.findFirst({ where: eq(categories.slug, slug) }),
+    getPublicSiteConfig(),
+  ]);
   if (!category) return { title: "Category Not Found" };
+  const storeName = siteConfig.businessName;
   return {
-    title: `${category.categoryName} – LookKool`,
-    description: category.description || `Shop ${category.categoryName} at LookKool`,
+    title: `${category.categoryName} – ${storeName}`,
+    description: category.description || `Shop ${category.categoryName} at ${storeName}`,
   };
 }
 

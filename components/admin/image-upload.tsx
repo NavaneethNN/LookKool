@@ -99,11 +99,11 @@ export function ImageUpload({
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
-          className="border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#470B49]/40 hover:bg-gray-50 transition-colors"
+          className="border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-gray-50 transition-colors"
           style={{ width: size, height: size }}
         >
           {uploading ? (
-            <Loader2 className="w-6 h-6 text-[#470B49] animate-spin" />
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
           ) : (
             <>
               <Upload className="w-5 h-5 text-gray-400 mb-1" />
@@ -206,7 +206,7 @@ export function MultiImageUpload({
         <div
           key={`${img.url}-${i}`}
           className={`relative group w-20 h-20 rounded-lg border-2 overflow-hidden ${
-            img.isPrimary ? "border-[#470B49]" : "border-transparent"
+            img.isPrimary ? "border-primary" : "border-transparent"
           }`}
         >
           <Image
@@ -221,7 +221,7 @@ export function MultiImageUpload({
               <button
                 type="button"
                 onClick={() => setPrimary(img)}
-                className="text-[9px] text-white bg-[#470B49] px-1.5 py-0.5 rounded"
+                className="text-[9px] text-white bg-primary px-1.5 py-0.5 rounded"
               >
                 Primary
               </button>
@@ -235,7 +235,7 @@ export function MultiImageUpload({
             </button>
           </div>
           {img.isPrimary && (
-            <div className="absolute top-0 left-0 bg-[#470B49] text-white text-[8px] px-1 py-0.5 rounded-br">
+            <div className="absolute top-0 left-0 bg-primary text-white text-[8px] px-1 py-0.5 rounded-br">
               ★
             </div>
           )}
@@ -245,10 +245,10 @@ export function MultiImageUpload({
       {images.length < max && (
         <div
           onClick={() => inputRef.current?.click()}
-          className="w-20 h-20 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#470B49]/40 hover:bg-gray-50 transition-colors"
+          className="w-20 h-20 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-gray-50 transition-colors"
         >
           {uploading ? (
-            <Loader2 className="w-5 h-5 text-[#470B49] animate-spin" />
+            <Loader2 className="w-5 h-5 text-primary animate-spin" />
           ) : (
             <>
               <Upload className="w-4 h-4 text-gray-400 mb-0.5" />

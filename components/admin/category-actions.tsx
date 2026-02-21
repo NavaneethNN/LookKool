@@ -111,7 +111,7 @@ export function CategoryActions({
         {isEdit ? (
           <div className="flex items-center gap-1">
             <button
-              className="p-1.5 text-gray-400 hover:text-[#470B49] rounded transition-colors"
+              className="p-1.5 text-gray-400 hover:text-primary rounded transition-colors"
               title="Edit"
             >
               <Pencil className="w-4 h-4" />
@@ -128,7 +128,7 @@ export function CategoryActions({
             </button>
           </div>
         ) : (
-          <Button size="sm" className="bg-[#470B49] hover:bg-[#5a1060]">
+          <Button size="sm" className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" />
             Add Category
           </Button>
@@ -235,7 +235,7 @@ export function CategoryActions({
                   onChange={(e) =>
                     setForm((p) => ({ ...p, isActive: e.target.checked }))
                   }
-                  className="h-4 w-4 rounded border-gray-300 text-[#470B49]"
+                  className="h-4 w-4 rounded border-gray-300 text-primary"
                 />
                 Active
               </label>
@@ -249,7 +249,7 @@ export function CategoryActions({
             <Button
               onClick={handleSubmit}
               disabled={isPending}
-              className="bg-[#470B49] hover:bg-[#5a1060]"
+              className="bg-primary hover:bg-primary/90"
             >
               {isPending
                 ? "Saving..."

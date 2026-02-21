@@ -6,119 +6,26 @@
 
 import { db } from "@/db";
 import { storeSettings } from "@/db/schema";
+import type { NavLinkConfig, FooterLinkConfig, PublicSiteConfig } from "@/lib/site-config-shared";
+import {
+  DEFAULT_NAV_LINKS,
+  DEFAULT_QUICK_LINKS,
+  DEFAULT_HELP_LINKS,
+  DEFAULT_LEGAL_LINKS,
+  DEFAULT_CONFIG,
+} from "@/lib/site-config-shared";
 
-// ─── Types ────────────────────────────────────────────────────
+// Re-export client-safe types and defaults for backwards compatibility
+export type { NavLinkConfig, FooterLinkConfig, PublicSiteConfig } from "@/lib/site-config-shared";
+export {
+  DEFAULT_NAV_LINKS,
+  DEFAULT_QUICK_LINKS,
+  DEFAULT_HELP_LINKS,
+  DEFAULT_LEGAL_LINKS,
+  DEFAULT_CONFIG,
+  hexToHsl,
+} from "@/lib/site-config-shared";
 
-export type NavLinkConfig = {
-  label: string;
-  href: string;
-  enabled: boolean;
-};
-
-export type FooterLinkConfig = {
-  label: string;
-  href: string;
-};
-
-export type PublicSiteConfig = {
-  businessName: string;
-  siteLogoUrl: string | null;
-  sitePrimaryColor: string;
-  siteDescription: string | null;
-  footerTagline: string | null;
-  navLinksConfig: NavLinkConfig[];
-  footerQuickLinks: FooterLinkConfig[];
-  footerHelpLinks: FooterLinkConfig[];
-  footerLegalLinks: FooterLinkConfig[];
-  footerContactPhone: string | null;
-  footerContactEmail: string | null;
-  footerShowMadeInIndia: boolean;
-};
-
-// ─── Defaults ─────────────────────────────────────────────────
-
-export const DEFAULT_NAV_LINKS: NavLinkConfig[] = [
-  { label: "Home", href: "/", enabled: true },
-  { label: "Shop All", href: "/categories/women", enabled: true },
-  { label: "New Arrivals", href: "/new-arrivals", enabled: true },
-  { label: "Collections", href: "/collections", enabled: true },
-  { label: "Offers", href: "/offers", enabled: true },
-];
-
-export const DEFAULT_QUICK_LINKS: FooterLinkConfig[] = [
-  { label: "Shop All", href: "/categories/women" },
-  { label: "New Arrivals", href: "/new-arrivals" },
-  { label: "Collections", href: "/collections" },
-  { label: "Offers", href: "/offers" },
-];
-
-export const DEFAULT_HELP_LINKS: FooterLinkConfig[] = [
-  { label: "Contact Us", href: "/contact" },
-  { label: "Shipping Info", href: "/shipping" },
-  { label: "Returns & Refunds", href: "/returns" },
-  { label: "FAQ", href: "/faq" },
-];
-
-export const DEFAULT_LEGAL_LINKS: FooterLinkConfig[] = [
-  { label: "Privacy Policy", href: "/privacy" },
-  { label: "Terms of Service", href: "/terms" },
-  { label: "Cancellation Policy", href: "/cancellation" },
-];
-
-const DEFAULT_CONFIG: PublicSiteConfig = {
-  businessName: "LookKool",
-  siteLogoUrl: null,
-  sitePrimaryColor: "#470B49",
-  siteDescription:
-    "Your go-to boutique for trendy, affordable fashion. Quality clothing delivered to your door.",
-  footerTagline: null,
-  navLinksConfig: DEFAULT_NAV_LINKS,
-  footerQuickLinks: DEFAULT_QUICK_LINKS,
-  footerHelpLinks: DEFAULT_HELP_LINKS,
-  footerLegalLinks: DEFAULT_LEGAL_LINKS,
-  footerContactPhone: null,
-  footerContactEmail: null,
-  footerShowMadeInIndia: true,
-};
-
-// ─── Helper: hex → HSL component string ───────────────────────
-
-export function hexToHsl(hex: string): { h: number; s: number; l: number } {
-  const clean = hex.replace("#", "");
-  if (!/^[0-9a-f]{6}$/i.test(clean)) return { h: 299, s: 76, l: 16 };
-
-  const r = parseInt(clean.slice(0, 2), 16) / 255;
-  const g = parseInt(clean.slice(2, 4), 16) / 255;
-  const b = parseInt(clean.slice(4, 6), 16) / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  let h = 0;
-  let s = 0;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r:
-        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-        break;
-      case g:
-        h = ((b - r) / d + 2) / 6;
-        break;
-      case b:
-        h = ((r - g) / d + 4) / 6;
-        break;
-    }
-  }
-
-  return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100),
-  };
-}
 
 // ─── Fetcher ──────────────────────────────────────────────────
 
@@ -138,6 +45,24 @@ export async function getPublicSiteConfig(): Promise<PublicSiteConfig> {
         footerContactPhone: storeSettings.footerContactPhone,
         footerContactEmail: storeSettings.footerContactEmail,
         footerShowMadeInIndia: storeSettings.footerShowMadeInIndia,
+        // SEO
+        seoTitle: storeSettings.seoTitle,
+        seoDescription: storeSettings.seoDescription,
+        seoKeywords: storeSettings.seoKeywords,
+        ogImageUrl: storeSettings.ogImageUrl,
+        // Social
+        socialInstagram: storeSettings.socialInstagram,
+        socialFacebook: storeSettings.socialFacebook,
+        socialTwitter: storeSettings.socialTwitter,
+        socialYoutube: storeSettings.socialYoutube,
+        // Hero
+        heroTitle: storeSettings.heroTitle,
+        heroSubtitle: storeSettings.heroSubtitle,
+        heroBadgeText: storeSettings.heroBadgeText,
+        heroCtaText: storeSettings.heroCtaText,
+        heroCtaLink: storeSettings.heroCtaLink,
+        heroSecondaryCtaText: storeSettings.heroSecondaryCtaText,
+        heroSecondaryCtaLink: storeSettings.heroSecondaryCtaLink,
       })
       .from(storeSettings)
       .limit(1);
@@ -163,6 +88,24 @@ export async function getPublicSiteConfig(): Promise<PublicSiteConfig> {
       footerContactPhone: row.footerContactPhone || null,
       footerContactEmail: row.footerContactEmail || null,
       footerShowMadeInIndia: row.footerShowMadeInIndia ?? true,
+      // SEO
+      seoTitle: row.seoTitle || null,
+      seoDescription: row.seoDescription || null,
+      seoKeywords: row.seoKeywords || null,
+      ogImageUrl: row.ogImageUrl || null,
+      // Social
+      socialInstagram: row.socialInstagram || null,
+      socialFacebook: row.socialFacebook || null,
+      socialTwitter: row.socialTwitter || null,
+      socialYoutube: row.socialYoutube || null,
+      // Hero
+      heroTitle: row.heroTitle || null,
+      heroSubtitle: row.heroSubtitle || null,
+      heroBadgeText: row.heroBadgeText || null,
+      heroCtaText: row.heroCtaText || null,
+      heroCtaLink: row.heroCtaLink || null,
+      heroSecondaryCtaText: row.heroSecondaryCtaText || null,
+      heroSecondaryCtaLink: row.heroSecondaryCtaLink || null,
     };
   } catch {
     return DEFAULT_CONFIG;

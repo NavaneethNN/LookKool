@@ -1,21 +1,79 @@
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+import { createClient } from "@/lib/supabase/server";
+import { db } from "@/db";
+import { orders } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, orderId } = await request.json();
+    // ─── Authentication check ──────────────────────────────
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!amount || amount <= 0) {
+    if (!user) {
       return NextResponse.json(
-        { error: "Invalid amount" },
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!keyId || !keySecret) {
+      console.error("Razorpay keys missing from environment");
+      return NextResponse.json(
+        { error: "Payment gateway not configured" },
+        { status: 500 }
+      );
+    }
+
+    const { orderId } = await request.json();
+
+    // ─── Validate orderId ──────────────────────────────────
+    if (!orderId || !Number.isInteger(orderId) || orderId < 1) {
+      return NextResponse.json(
+        { error: "Invalid order ID" },
         { status: 400 }
       );
     }
+
+    // ─── Fetch order from DB — NEVER trust client amount ───
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.orderId, orderId),
+          eq(orders.userId, user.id),
+          eq(orders.paymentStatus, "Pending"),
+          eq(orders.paymentMethod, "razorpay")
+        )
+      )
+      .limit(1);
+
+    if (!order) {
+      return NextResponse.json(
+        { error: "Order not found or already processed" },
+        { status: 404 }
+      );
+    }
+
+    const amount = parseFloat(order.totalAmount);
+    if (!amount || amount <= 0) {
+      return NextResponse.json(
+        { error: "Invalid order amount" },
+        { status: 400 }
+      );
+    }
+
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
 
     const razorpayOrder = await razorpay.orders.create({
       amount: Math.round(amount * 100), // Razorpay expects paise

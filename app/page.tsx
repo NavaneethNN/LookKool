@@ -3,6 +3,7 @@ import { HeroSection } from "@/components/home/hero-section";
 import { FeaturedCategories } from "@/components/home/featured-categories";
 import { FeaturesStrip } from "@/components/home/features-strip";
 import { HomeRecommendations } from "@/components/home/home-recommendations";
+import { getPublicSiteConfig } from "@/lib/site-config";
 
 const NewsletterSection = dynamic(
   () =>
@@ -23,10 +24,12 @@ const RecentlyViewedHome = dynamic(
 // Revalidate the homepage every 60 seconds
 export const revalidate = 60;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const siteConfig = await getPublicSiteConfig();
+
   return (
     <>
-      <HeroSection />
+      <HeroSection siteConfig={siteConfig} />
       <FeaturedCategories />
       <HomeRecommendations />
       <FeaturesStrip />

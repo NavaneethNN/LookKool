@@ -48,6 +48,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // ─── Studio role guard ─────────────────────────────────────
+  // Only admin and cashier roles may access /studio/*
+  const isStudioRoute =
+    pathname === "/studio" || pathname.startsWith("/studio/");
+  if (isStudioRoute && user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!profile || !["admin", "cashier"].includes(profile.role)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+  }
+
   // Auth routes → redirect to home if already authenticated
   const isAuthRoute = authRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)

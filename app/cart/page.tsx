@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { CartContent } from "./cart-content";
 import dynamic from "next/dynamic";
+import { getPublicDeliveryConfig } from "@/lib/actions/checkout-actions";
+import { getPublicSiteConfig } from "@/lib/site-config";
 
 const CartRecommendations = dynamic(
   () =>
@@ -10,16 +12,21 @@ const CartRecommendations = dynamic(
   { ssr: false }
 );
 
-export const metadata: Metadata = {
-  title: "Shopping Cart – LookKool",
-  description: "Review your cart and proceed to checkout.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const siteConfig = await getPublicSiteConfig();
+  return {
+    title: `Shopping Cart – ${siteConfig.businessName}`,
+    description: "Review your cart and proceed to checkout.",
+  };
+}
 
-export default function CartPage() {
+export default async function CartPage() {
+  const deliveryConfig = await getPublicDeliveryConfig();
+
   return (
     <main className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold sm:text-3xl mb-8">Shopping Cart</h1>
-      <CartContent />
+      <CartContent deliveryConfig={deliveryConfig} />
       <CartRecommendations />
     </main>
   );

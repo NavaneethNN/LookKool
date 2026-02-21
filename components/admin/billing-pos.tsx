@@ -374,7 +374,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
                   value={searchQuery}
                   onChange={handleSearchChange}
                   placeholder="Search products by name or code..."
-                  className="pl-10 h-12 text-base border-2 focus:border-[#470B49]"
+                  className="pl-10 h-12 text-base border-2 focus:border-primary"
                   autoFocus
                 />
                 {searching && (
@@ -640,7 +640,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
                     </div>
                   )}
                   <Separator />
-                  <div className="flex justify-between text-lg font-bold text-[#470B49]">
+                  <div className="flex justify-between text-lg font-bold text-primary">
                     <span>Total</span>
                     <span>₹{roundedTotal.toLocaleString("en-IN")}</span>
                   </div>
@@ -649,7 +649,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
                 <Button
                   onClick={handleCreateBill}
                   disabled={cart.length === 0 || submitting}
-                  className="w-full mt-5 h-12 text-base font-semibold bg-[#470B49] hover:bg-[#5c1060] gap-2"
+                  className="w-full mt-5 h-12 text-base font-semibold bg-primary hover:bg-primary/90 gap-2"
                 >
                   <Receipt className="w-5 h-5" />
                   {submitting ? "Creating Bill..." : "Generate Bill"}
@@ -716,7 +716,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
                   ) : (
                     bills.map((bill) => (
                       <tr key={bill.billId} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 font-mono text-xs font-medium text-[#470B49]">
+                        <td className="px-4 py-3 font-mono text-xs font-medium text-primary">
                           {bill.invoiceNumber}
                         </td>
                         <td className="px-4 py-3">
@@ -756,7 +756,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 gap-1 text-[#470B49] hover:text-[#5c1060] hover:bg-purple-50"
+                            className="h-8 gap-1 text-primary hover:text-primary/90 hover:bg-purple-50"
                             onClick={() =>
                               window.open(
                                 `/api/invoice/bill/${bill.billId}`,
@@ -833,7 +833,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
                     className={`flex items-center justify-between px-4 py-3 rounded-lg border text-left transition-colors ${
                       outOfStock
                         ? "opacity-50 cursor-not-allowed bg-gray-50"
-                        : "hover:border-[#470B49] hover:bg-purple-50"
+                        : "hover:border-primary hover:bg-purple-50"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -874,7 +874,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
               Bill Created!
             </h3>
             <p className="text-sm text-gray-500 mb-4">
-              Invoice <strong className="text-[#470B49]">{lastInvoiceNumber}</strong> has been
+              Invoice <strong className="text-primary">{lastInvoiceNumber}</strong> has been
               generated successfully.
             </p>
             <div className="flex gap-3">
@@ -887,7 +887,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
                 New Bill
               </Button>
               <Button
-                className="bg-[#470B49] hover:bg-[#5c1060] gap-1"
+                className="bg-primary hover:bg-primary/90 gap-1"
                 onClick={() => {
                   window.open(`/api/invoice/bill/${lastBillId}`, "_blank");
                   setBillSuccessOpen(false);

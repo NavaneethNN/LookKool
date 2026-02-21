@@ -1,14 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getInStoreBill, getStoreSettings } from "@/lib/actions/admin-actions";
 import { generateInvoiceHTML, buildLayoutConfig, type InvoiceData } from "@/lib/invoice-template";
+import { createClient } from "@/lib/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { billId: string } }
 ) {
   try {
+    // Authenticate: must be admin or cashier
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const [profile] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.userId, user.id))
+      .limit(1);
+    if (!profile || (profile.role !== "admin" && profile.role !== "cashier")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const billId = Number(params.billId);
-    if (isNaN(billId)) {
+    if (isNaN(billId) || billId < 1) {
       return NextResponse.json({ error: "Invalid bill ID" }, { status: 400 });
     }
 

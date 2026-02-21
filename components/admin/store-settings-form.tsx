@@ -150,8 +150,8 @@ function ToggleSwitch({
           className={`
             relative inline-flex h-5 w-9 shrink-0 items-center rounded-full
             transition-colors duration-200 focus-visible:outline-none
-            focus-visible:ring-2 focus-visible:ring-[#470B49] focus-visible:ring-offset-2
-            ${checked ? "bg-[#470B49]" : "bg-gray-200"}
+            focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+            ${checked ? "bg-primary" : "bg-gray-200"}
           `}
         >
           <span
@@ -164,7 +164,7 @@ function ToggleSwitch({
         </button>
       </div>
       <div className="flex-1 min-w-0">
-        <span className="text-sm font-medium text-gray-900 group-hover:text-[#470B49] transition-colors">
+        <span className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
           {label}
         </span>
         <p className="text-xs text-gray-500 mt-0.5">{description}</p>
@@ -503,7 +503,7 @@ export function StoreSettingsForm({
       {/* ── Business Identity ─────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6">
         <div className="flex items-center gap-2 mb-5">
-          <Building2 className="w-5 h-5 text-[#470B49]" />
+          <Building2 className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             Business Identity
           </h3>
@@ -593,7 +593,7 @@ export function StoreSettingsForm({
       {/* ── Business Address ──────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6">
         <div className="flex items-center gap-2 mb-5">
-          <MapPin className="w-5 h-5 text-[#470B49]" />
+          <MapPin className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             Business Address
           </h3>
@@ -670,7 +670,7 @@ export function StoreSettingsForm({
       {/* ── GST Configuration ─────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6">
         <div className="flex items-center gap-2 mb-5">
-          <Receipt className="w-5 h-5 text-[#470B49]" />
+          <Receipt className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             GST & Invoice Configuration
           </h3>
@@ -682,7 +682,7 @@ export function StoreSettingsForm({
                 type="checkbox"
                 checked={form.enableGst}
                 onChange={(e) => update("enableGst", e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-[#470B49] focus:ring-[#470B49]"
+                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <div>
                 <span className="text-sm font-medium text-gray-900">
@@ -759,7 +759,7 @@ export function StoreSettingsForm({
               onChange={(e) => update("invoiceTerms", e.target.value)}
               rows={3}
               placeholder="e.g. Goods once sold cannot be returned. Exchange within 7 days with bill."
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-[#470B49] focus:outline-none focus:ring-1 focus:ring-[#470B49]"
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
           <div className="md:col-span-2">
@@ -771,7 +771,7 @@ export function StoreSettingsForm({
               onChange={(e) => update("invoiceNotes", e.target.value)}
               rows={2}
               placeholder="e.g. Thank you for shopping with us!"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-[#470B49] focus:outline-none focus:ring-1 focus:ring-[#470B49]"
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
         </div>
@@ -780,7 +780,7 @@ export function StoreSettingsForm({
       {/* ── Bank Details ──────────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6">
         <div className="flex items-center gap-2 mb-5">
-          <Landmark className="w-5 h-5 text-[#470B49]" />
+          <Landmark className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             Bank Details
             <span className="text-xs font-normal text-gray-400 ml-2">
@@ -835,7 +835,7 @@ export function StoreSettingsForm({
       {/* ── UPI ───────────────────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6">
         <div className="flex items-center gap-2 mb-5">
-          <Smartphone className="w-5 h-5 text-[#470B49]" />
+          <Smartphone className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             UPI Details
           </h3>
@@ -859,9 +859,9 @@ export function StoreSettingsForm({
           BILL LAYOUT & CUSTOMIZATION
           ══════════════════════════════════════════════════════ */}
       <div className="flex items-center gap-2 mb-2">
-        <FileText className="w-5 h-5 text-[#470B49]" />
+        <FileText className="w-5 h-5 text-primary" />
         <h2 className="text-lg font-bold text-gray-900">Bill Layout & Customization</h2>
-        <span className="text-xs bg-[#470B49]/10 text-[#470B49] px-2 py-0.5 rounded-full font-medium">
+        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
           Applies to all bills & invoices
         </span>
       </div>
@@ -873,7 +873,7 @@ export function StoreSettingsForm({
       {/* ── Paper & Printing ──────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6 mb-8">
         <div className="flex items-center gap-2 mb-5">
-          <Printer className="w-5 h-5 text-[#470B49]" />
+          <Printer className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             Paper Size & Printing
           </h3>
@@ -920,7 +920,7 @@ export function StoreSettingsForm({
                 step="0.05"
                 value={form.billFontScale}
                 onChange={(e) => update("billFontScale", e.target.value)}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#470B49]"
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
               />
               <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded min-w-[48px] text-center">
                 {Number(form.billFontScale).toFixed(2)}×
@@ -936,7 +936,7 @@ export function StoreSettingsForm({
       {/* ── Appearance ────────────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6 mb-8">
         <div className="flex items-center gap-2 mb-5">
-          <Palette className="w-5 h-5 text-[#470B49]" />
+          <Palette className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             Appearance
           </h3>
@@ -991,7 +991,7 @@ export function StoreSettingsForm({
       {/* ── Custom Text ───────────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6 mb-8">
         <div className="flex items-center gap-2 mb-5">
-          <Type className="w-5 h-5 text-[#470B49]" />
+          <Type className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             Custom Text
           </h3>
@@ -1032,7 +1032,7 @@ export function StoreSettingsForm({
               onChange={(e) => update("billHeaderText", e.target.value)}
               rows={2}
               placeholder="e.g. Wholesale & Retail • Since 2010"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-[#470B49] focus:outline-none focus:ring-1 focus:ring-[#470B49]"
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
           <div>
@@ -1045,7 +1045,7 @@ export function StoreSettingsForm({
               onChange={(e) => update("billFooterText", e.target.value)}
               rows={2}
               placeholder="e.g. This is a computer-generated bill. No signature required."
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-[#470B49] focus:outline-none focus:ring-1 focus:ring-[#470B49]"
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
         </div>
@@ -1054,7 +1054,7 @@ export function StoreSettingsForm({
       {/* ── Section Toggles ───────────────────────── */}
       <section className="rounded-xl border bg-white shadow-sm p-6 mb-8">
         <div className="flex items-center gap-2 mb-5">
-          <ToggleLeft className="w-5 h-5 text-[#470B49]" />
+          <ToggleLeft className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">
             Show / Hide Sections
           </h3>
@@ -1115,7 +1115,7 @@ export function StoreSettingsForm({
       <section className="rounded-xl border bg-white shadow-sm p-6 mb-8">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <Eye className="w-5 h-5 text-[#470B49]" />
+            <Eye className="w-5 h-5 text-primary" />
             <h3 className="text-sm font-semibold text-gray-900">
               Live Preview
             </h3>
@@ -1151,7 +1151,7 @@ export function StoreSettingsForm({
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="h-11 px-8 bg-[#470B49] hover:bg-[#5c1060] gap-2 text-sm font-semibold"
+          className="h-11 px-8 bg-primary hover:bg-primary/90 gap-2 text-sm font-semibold"
         >
           <Save className="w-4 h-4" />
           {saving ? "Saving..." : "Save Store Settings"}

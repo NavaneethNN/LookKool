@@ -31,6 +31,7 @@ import {
   confirmPayment,
   confirmCodOrder,
   validateCoupon,
+  cancelPendingOrder,
 } from "@/lib/actions/checkout-actions";
 import { AddressForm } from "@/app/account/addresses/address-form";
 
@@ -81,7 +82,15 @@ interface Address {
   isDefault: boolean;
 }
 
-export function CheckoutContent() {
+export function CheckoutContent({
+  storeName = "LookKool",
+  brandColor = "#470B49",
+  deliveryConfig = { freeAbove: 999, standardCharge: 79 },
+}: {
+  storeName?: string;
+  brandColor?: string;
+  deliveryConfig?: { freeAbove: number | null; standardCharge: number };
+}) {
   const router = useRouter();
   const { items, total, savings, clearCart } = useCartStore();
 
@@ -132,8 +141,9 @@ export function CheckoutContent() {
 
   const cartTotal = total();
   const cartSavings = savings();
-  const shippingFree = cartTotal >= 999;
-  const deliveryCharge = shippingFree ? 0 : 79;
+  const { freeAbove, standardCharge } = deliveryConfig;
+  const shippingFree = freeAbove !== null && cartTotal >= freeAbove;
+  const deliveryCharge = shippingFree ? 0 : standardCharge;
   const discount = couponApplied?.discount || 0;
   const grandTotal = cartTotal + deliveryCharge - discount;
 
@@ -201,7 +211,7 @@ export function CheckoutContent() {
         // COD — mark order and redirect
         await confirmCodOrder(orderId);
         clearCart();
-        router.push(`/checkout/order-success?orderId=${orderId}`);
+        window.location.href = `/checkout/order-success?orderId=${orderId}`;
         return;
       }
 
@@ -209,7 +219,7 @@ export function CheckoutContent() {
       const rpRes = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: orderTotal, orderId }),
+        body: JSON.stringify({ orderId }),
       });
 
       if (!rpRes.ok) {
@@ -226,37 +236,36 @@ export function CheckoutContent() {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         amount: rpOrder.amount,
         currency: rpOrder.currency,
-        name: "LookKool",
+        name: storeName,
         description: `Order #${orderId}`,
         order_id: rpOrder.id,
         handler: async (response: RazorpayResponse) => {
-          // Verify on server
-          const verifyRes = await fetch("/api/razorpay/verify-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(response),
-          });
+          // Verify signature + confirm payment server-side in one step
+          const result = await confirmPayment(
+            orderId,
+            response.razorpay_payment_id,
+            response.razorpay_order_id,
+            response.razorpay_signature
+          );
 
-          if (verifyRes.ok) {
-            await confirmPayment(
-              orderId,
-              response.razorpay_payment_id,
-              response.razorpay_order_id
-            );
-            clearCart();
-            router.push(`/checkout/order-success?orderId=${orderId}`);
-          } else {
-            toast.error("Payment verification failed. Contact support.");
+          if (result.error) {
+            toast.error(result.error);
             setPlacing(false);
+          } else {
+            clearCart();
+            // Hard redirect — router.push can fail inside Razorpay's callback context
+            window.location.href = `/checkout/order-success?orderId=${orderId}`;
           }
         },
         prefill: {
           name: selectedAddr.fullName,
           contact: selectedAddr.phoneNumber,
         },
-        theme: { color: "#470B49" },
+        theme: { color: brandColor },
         modal: {
           ondismiss: () => {
+            // Cancel the pending order to restore stock
+            cancelPendingOrder(orderId).catch(() => {});
             toast.error("Payment cancelled");
             setPlacing(false);
           },
@@ -570,13 +579,13 @@ export function CheckoutContent() {
                 Subtotal ({items.reduce((a, i) => a + i.quantity, 0)} items)
               </span>
               <span>
-                ₹{(cartTotal + cartSavings).toLocaleString("en-IN")}
+                ₹{cartTotal.toLocaleString("en-IN")}
               </span>
             </div>
 
             {cartSavings > 0 && (
               <div className="flex justify-between text-green-700">
-                <span>Product Discount</span>
+                <span>You Save</span>
                 <span>-₹{cartSavings.toLocaleString("en-IN")}</span>
               </div>
             )}
@@ -596,7 +605,7 @@ export function CheckoutContent() {
               <span
                 className={shippingFree ? "text-green-700 font-medium" : ""}
               >
-                {shippingFree ? "FREE" : "₹79"}
+                {shippingFree ? "FREE" : `₹${standardCharge.toLocaleString("en-IN")}`}
               </span>
             </div>
           </div>

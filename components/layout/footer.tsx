@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Phone, Mail } from "lucide-react";
+import { Heart, Phone, Mail, Instagram, Facebook, Twitter, Youtube } from "lucide-react";
 import type { PublicSiteConfig } from "@/lib/site-config";
 import {
   DEFAULT_QUICK_LINKS,
@@ -58,6 +58,31 @@ export function Footer({ siteConfig }: FooterProps) {
                   >
                     <Mail className="h-3.5 w-3.5" />
                     {siteConfig.footerContactEmail}
+                  </a>
+                )}
+              </div>
+            )}
+            {/* Social Links */}
+            {(siteConfig.socialInstagram || siteConfig.socialFacebook || siteConfig.socialTwitter || siteConfig.socialYoutube) && (
+              <div className="flex items-center gap-3">
+                {siteConfig.socialInstagram && (
+                  <a href={siteConfig.socialInstagram} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Instagram">
+                    <Instagram className="h-4 w-4" />
+                  </a>
+                )}
+                {siteConfig.socialFacebook && (
+                  <a href={siteConfig.socialFacebook} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Facebook">
+                    <Facebook className="h-4 w-4" />
+                  </a>
+                )}
+                {siteConfig.socialTwitter && (
+                  <a href={siteConfig.socialTwitter} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Twitter">
+                    <Twitter className="h-4 w-4" />
+                  </a>
+                )}
+                {siteConfig.socialYoutube && (
+                  <a href={siteConfig.socialYoutube} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" aria-label="YouTube">
+                    <Youtube className="h-4 w-4" />
                   </a>
                 )}
               </div>

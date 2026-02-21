@@ -39,6 +39,8 @@ interface ColorVariant {
     size: string;
     stockCount: number;
     priceModifier: number;
+    price: number | null;
+    mrp: number | null;
   }[];
   images: { imageId: number; imagePath: string; altText: string | null }[];
 }
@@ -115,10 +117,12 @@ export function ProductDetail({
     [sizes, selectedSize]
   );
 
-  const effectivePrice = product.basePrice + (selectedVariant?.priceModifier ?? 0);
+  // Use variant-level price when set, otherwise fall back to product base price + modifier
+  const effectivePrice = selectedVariant?.price ?? (product.basePrice + (selectedVariant?.priceModifier ?? 0));
+  const effectiveMrp = selectedVariant?.mrp ?? product.mrp;
   const discount =
-    product.mrp > effectivePrice
-      ? Math.round(((product.mrp - effectivePrice) / product.mrp) * 100)
+    effectiveMrp > effectivePrice
+      ? Math.round(((effectiveMrp - effectivePrice) / effectiveMrp) * 100)
       : 0;
 
   const isOutOfStock = selectedVariant ? selectedVariant.stockCount === 0 : false;
@@ -149,7 +153,7 @@ export function ProductDetail({
       hexcode: currentColor.hexcode,
       size: selectedVariant.size,
       price: effectivePrice,
-      mrp: product.mrp,
+      mrp: effectiveMrp,
       image: images[0]?.imagePath ?? "",
       quantity: quantity,
       stock: selectedVariant.stockCount,
@@ -284,7 +288,7 @@ export function ProductDetail({
           {discount > 0 && (
             <>
               <span className="text-lg text-muted-foreground line-through">
-                ₹{product.mrp.toLocaleString("en-IN")}
+                ₹{effectiveMrp.toLocaleString("en-IN")}
               </span>
               <Badge
                 variant="secondary"

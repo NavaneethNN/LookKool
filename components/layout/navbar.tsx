@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { useWishlistStore } from "@/lib/stores/wishlist-store";
+import { CustomerNotificationBell } from "@/components/layout/customer-notification-bell";
 import type { PublicSiteConfig } from "@/lib/site-config";
 
 interface NavbarProps {
@@ -27,7 +28,10 @@ export function Navbar({ user, siteConfig }: NavbarProps) {
 
   const logoSrc = siteConfig.siteLogoUrl || "/NewLogo.png";
   const siteName = siteConfig.businessName;
-  const navLinks = siteConfig.navLinksConfig.filter((l) => l.enabled);
+  const navLinks = siteConfig.navLinksConfig.filter((l) => l.enabled && l.href !== "/shop");
+
+  // Static "Shop All" link — always present
+  const shopAllLink = { label: "Shop All", href: "/shop" };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -60,6 +64,17 @@ export function Navbar({ user, siteConfig }: NavbarProps) {
               {link.label}
             </Link>
           ))}
+          <Link
+            href={shopAllLink.href}
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              pathname === shopAllLink.href
+                ? "text-primary"
+                : "text-muted-foreground"
+            )}
+          >
+            {shopAllLink.label}
+          </Link>
         </nav>
 
         {/* Desktop Actions */}
@@ -90,11 +105,14 @@ export function Navbar({ user, siteConfig }: NavbarProps) {
             </Link>
           </Button>
           {user ? (
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/account" aria-label="Account">
-                <User className="h-5 w-5" />
-              </Link>
-            </Button>
+            <>
+              <CustomerNotificationBell />
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/account" aria-label="Account">
+                  <User className="h-5 w-5" />
+                </Link>
+              </Button>
+            </>
           ) : (
             <Button asChild size="sm">
               <Link href="/sign-in">Sign In</Link>
@@ -157,6 +175,18 @@ export function Navbar({ user, siteConfig }: NavbarProps) {
                       {link.label}
                     </Link>
                   ))}
+                  <Link
+                    href={shopAllLink.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                      pathname === shopAllLink.href
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-accent"
+                    )}
+                  >
+                    {shopAllLink.label}
+                  </Link>
                 </nav>
 
                 {/* Mobile Footer Actions */}

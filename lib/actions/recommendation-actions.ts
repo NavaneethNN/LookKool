@@ -10,6 +10,17 @@ import {
   reviews,
 } from "@/db/schema";
 import { eq, and, desc, asc, sql, ne, count, avg, gte, notInArray } from "drizzle-orm";
+import { createClient } from "@/lib/supabase/server";
+
+// ─── Constants ─────────────────────────────────────────────────
+
+const MAX_LIMIT = 50;
+
+/** Clamp any user-supplied limit to safe range */
+function clampLimit(limit: number, defaultVal: number = 8): number {
+  if (!Number.isInteger(limit) || limit < 1) return defaultVal;
+  return Math.min(limit, MAX_LIMIT);
+}
 
 // ─── Shared Helpers ────────────────────────────────────────────
 
@@ -127,6 +138,7 @@ export async function getSimilarProducts(
   categoryId: number,
   limit: number = 8
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit);
   const rows = await db
     .select({
       productId: products.productId,
@@ -164,6 +176,10 @@ export async function getFrequentlyBoughtTogether(
   productIds: number[],
   limit: number = 6
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit, 6);
+  if (productIds.length === 0) return [];
+  // Sanitize input IDs
+  productIds = productIds.filter(id => Number.isInteger(id) && id > 0).slice(0, 50);
   if (productIds.length === 0) return [];
 
   // Find orders containing any of the given products
@@ -246,6 +262,7 @@ export async function getFrequentlyBoughtTogether(
 export async function getTrendingProducts(
   limit: number = 8
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit);
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -315,6 +332,7 @@ export async function getTrendingProducts(
 export async function getNewArrivals(
   limit: number = 8
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit);
   const rows = await db
     .select({
       productId: products.productId,
@@ -345,6 +363,7 @@ export async function getNewArrivals(
 export async function getPopularProducts(
   limit: number = 8
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit);
   const rows = await db
     .select({
       productId: products.productId,
@@ -375,6 +394,7 @@ export async function getPopularProducts(
 export async function getTopRatedProducts(
   limit: number = 8
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit);
   const avgRatingExpr = avg(reviews.rating).as("avg_rating");
   const reviewCountExpr = count().as("review_count");
   const topRated = await db
@@ -432,6 +452,7 @@ export async function getTopRatedProducts(
 export async function getBiggestDeals(
   limit: number = 8
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit);
   const rows = await db
     .select({
       productId: products.productId,
@@ -473,6 +494,21 @@ export async function getPersonalizedPicks(
   userId: string,
   limit: number = 8
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit);
+
+  // Use authenticated userId — ignore any client-supplied userId
+  // If called from a server component, the passed userId is trusted.
+  // But we verify auth if possible to prevent IDOR.
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      userId = user.id; // Always use the authenticated user's ID
+    }
+  } catch {
+    // If auth fails, fall back to the provided userId (for SSR contexts)
+  }
+
   // Get categories the user has purchased from
   const freqExpr = sql<number>`count(*)`.as("freq");
   const purchasedCategories = await db
@@ -552,6 +588,9 @@ export async function getPopularInCategory(
   excludeIds: number[] = [],
   limit: number = 8
 ): Promise<RecommendedProduct[]> {
+  limit = clampLimit(limit);
+  // Sanitize excludeIds
+  excludeIds = excludeIds.filter(id => Number.isInteger(id) && id > 0).slice(0, 50);
   const rows = await db
     .select({
       productId: products.productId,
@@ -593,6 +632,9 @@ export async function getPopularInCategory(
 export async function getProductsByIds(
   productIds: number[]
 ): Promise<RecommendedProduct[]> {
+  if (productIds.length === 0) return [];
+  // Sanitize: only positive integers, cap at 50
+  productIds = productIds.filter(id => Number.isInteger(id) && id > 0).slice(0, MAX_LIMIT);
   if (productIds.length === 0) return [];
 
   const rows = await db

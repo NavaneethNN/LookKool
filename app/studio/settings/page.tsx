@@ -72,6 +72,24 @@ export default async function SettingsPage() {
               footerContactPhone: siteConfig.footerContactPhone ?? "",
               footerContactEmail: siteConfig.footerContactEmail ?? "",
               footerShowMadeInIndia: siteConfig.footerShowMadeInIndia,
+              // SEO
+              seoTitle: siteConfig.seoTitle ?? "",
+              seoDescription: siteConfig.seoDescription ?? "",
+              seoKeywords: siteConfig.seoKeywords ?? "",
+              ogImageUrl: siteConfig.ogImageUrl ?? "",
+              // Social
+              socialInstagram: siteConfig.socialInstagram ?? "",
+              socialFacebook: siteConfig.socialFacebook ?? "",
+              socialTwitter: siteConfig.socialTwitter ?? "",
+              socialYoutube: siteConfig.socialYoutube ?? "",
+              // Hero
+              heroTitle: siteConfig.heroTitle ?? "",
+              heroSubtitle: siteConfig.heroSubtitle ?? "",
+              heroBadgeText: siteConfig.heroBadgeText ?? "",
+              heroCtaText: siteConfig.heroCtaText ?? "",
+              heroCtaLink: siteConfig.heroCtaLink ?? "",
+              heroSecondaryCtaText: siteConfig.heroSecondaryCtaText ?? "",
+              heroSecondaryCtaLink: siteConfig.heroSecondaryCtaLink ?? "",
             }}
             categories={allCategories}
           />
