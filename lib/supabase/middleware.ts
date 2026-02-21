@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/supabase";
+import type { User } from "@supabase/supabase-js";
 
 /**
  * updateSession
@@ -8,10 +9,12 @@ import type { Database } from "@/types/supabase";
  * Refreshes the Supabase Auth session if it has expired, then
  * writes the new session cookies to both the request and response.
  *
- * This is required by @supabase/ssr to keep the session alive in
- * Next.js Server Components which cannot set cookies themselves.
+ * Returns both the response AND the authenticated user so that
+ * middleware.ts does NOT need to call getUser() again.
  */
-export async function updateSession(request: NextRequest) {
+export async function updateSession(
+  request: NextRequest
+): Promise<{ response: NextResponse; user: User | null }> {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(
@@ -39,7 +42,9 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refresh session — do NOT remove this call
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return supabaseResponse;
+  return { response: supabaseResponse, user };
 }

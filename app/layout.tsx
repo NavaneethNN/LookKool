@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getCachedSiteConfig();
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app";
+    process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
 
   const title = config.seoTitle || config.businessName;
   const description =
@@ -91,9 +91,13 @@ export default async function RootLayout({
     createClient(),
   ]);
 
+  // Use getSession() instead of getUser() — the middleware already called
+  // getUser() to refresh the session, so the cookie is fresh. getSession()
+  // reads from the cookie locally with zero network round-trip.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   // Build dynamic CSS override for primary brand color
   const { h, s, l } = hexToHsl(siteConfig.sitePrimaryColor);

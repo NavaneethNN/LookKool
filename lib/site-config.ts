@@ -6,6 +6,7 @@
 
 import { db } from "@/db";
 import { storeSettings } from "@/db/schema";
+import { unstable_cache } from "next/cache";
 import type { NavLinkConfig, FooterLinkConfig, PublicSiteConfig } from "@/lib/site-config-shared";
 import {
   DEFAULT_NAV_LINKS,
@@ -29,7 +30,7 @@ export {
 
 // ─── Fetcher ──────────────────────────────────────────────────
 
-export async function getPublicSiteConfig(): Promise<PublicSiteConfig> {
+async function _fetchSiteConfig(): Promise<PublicSiteConfig> {
   try {
     const [row] = await db
       .select({
@@ -111,3 +112,14 @@ export async function getPublicSiteConfig(): Promise<PublicSiteConfig> {
     return DEFAULT_CONFIG;
   }
 }
+
+/**
+ * Cached version of site config — survives across requests.
+ * Revalidates every 300 seconds (5 min) or when "site-config" tag is invalidated.
+ * Use revalidateTag("site-config") after admin updates settings.
+ */
+export const getPublicSiteConfig = unstable_cache(
+  _fetchSiteConfig,
+  ["public-site-config"],
+  { revalidate: 300, tags: ["site-config"] }
+);

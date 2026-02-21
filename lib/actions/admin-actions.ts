@@ -1616,6 +1616,9 @@ export async function upsertStoreSettings(data: {
   }
 
   revalidatePath("/studio/settings");
+  // Bust cached site config so storefront picks up changes immediately
+  const { revalidateTag } = await import("next/cache");
+  revalidateTag("site-config");
   return { success: true };
 }
 
@@ -1763,6 +1766,8 @@ export async function upsertSiteAppearance(data: {
   // Revalidate storefront and admin settings
   revalidatePath("/", "layout");
   revalidatePath("/studio/settings");
+  const { revalidateTag } = await import("next/cache");
+  revalidateTag("site-config");
   return { success: true };
 }
 

@@ -13,35 +13,26 @@ const protectedRoutes = ["/account", "/checkout", "/studio"];
 const authRoutes = ["/sign-in", "/sign-up"];
 
 export async function middleware(request: NextRequest) {
-  // Refresh the session first
-  const response = await updateSession(request);
-
   const { pathname } = request.nextUrl;
 
-  // Build a lightweight Supabase client to check auth
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll() {
-          // no-op — we already set cookies in updateSession
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Protected routes → redirect to sign-in if not authenticated
+  // Check if this route needs auth at all
   const isProtected = protectedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
+  const isAuthRoute = authRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+  const needsAuth = isProtected || isAuthRoute;
+
+  // For public routes, just refresh the session (single getUser call)
+  // and return immediately — no extra auth checks needed
+  const { response, user } = await updateSession(request);
+
+  if (!needsAuth) {
+    return response;
+  }
+
+  // Protected routes → redirect to sign-in if not authenticated
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
@@ -53,6 +44,21 @@ export async function middleware(request: NextRequest) {
   const isStudioRoute =
     pathname === "/studio" || pathname.startsWith("/studio/");
   if (isStudioRoute && user) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll() {
+            // no-op — cookies already set by updateSession
+          },
+        },
+      }
+    );
+
     const { data: profile } = await supabase
       .from("users")
       .select("role")
@@ -67,9 +73,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // Auth routes → redirect to home if already authenticated
-  const isAuthRoute = authRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
   if (isAuthRoute && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/";

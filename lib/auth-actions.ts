@@ -87,7 +87,7 @@ export async function signOut() {
 export async function signInWithGoogle() {
   const supabase = await createClient();
   // Use environment variable for origin — NEVER trust request headers
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app";
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",

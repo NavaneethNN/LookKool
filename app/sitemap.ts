@@ -4,7 +4,7 @@ import { products, categories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app";
+  process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages

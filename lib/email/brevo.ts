@@ -184,7 +184,7 @@ interface OrderEmailData {
 
 export async function sendOrderConfirmation(data: OrderEmailData) {
   const cfg = await getEmailStoreConfig();
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
 
   const itemsHtml = data.items
     .map(
@@ -270,7 +270,7 @@ export async function sendShippingUpdate(data: {
   trackingNumber?: string | null;
 }) {
   const cfg = await getEmailStoreConfig();
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
 
   const statusMessages: Record<string, string> = {
     Shipped: "Your order has been shipped and is on its way!",
@@ -318,7 +318,7 @@ export async function sendReturnStatusEmail(data: {
   adminNotes?: string;
 }) {
   const cfg = await getEmailStoreConfig();
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
 
   const statusMessages: Record<string, string> = {
     Approved:
@@ -367,7 +367,7 @@ export async function sendWelcomeEmail(data: {
   email: string;
 }) {
   const cfg = await getEmailStoreConfig();
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
 
   const body = `
     <h2>Welcome to ${cfg.storeName}! ðŸ’œ</h2>
