@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Save,
@@ -370,6 +371,7 @@ export function SiteAppearanceForm({
   settings: Partial<SiteAppearanceData> | null;
   categories: Category[];
 }) {
+  const router = useRouter();
   const [form, setForm] = useState<SiteAppearanceData>({
     siteLogoUrl: settings?.siteLogoUrl ?? "",
     sitePrimaryColor: settings?.sitePrimaryColor ?? "#470B49",
@@ -451,7 +453,8 @@ export function SiteAppearanceForm({
         heroSecondaryCtaLink: form.heroSecondaryCtaLink || null,
       });
       if (result.success) {
-        toast.success("Site appearance saved! Reload the page to see changes.");
+        toast.success("Site appearance saved!");
+        router.refresh();
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save settings");

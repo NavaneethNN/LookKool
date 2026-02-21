@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Save,
@@ -427,6 +428,7 @@ export function StoreSettingsForm({
 }: {
   settings: StoreSettingsData | null;
 }) {
+  const router = useRouter();
   const [form, setForm] = useState<StoreSettingsData>({
     ...defaultSettings,
     ...Object.fromEntries(
@@ -490,6 +492,7 @@ export function StoreSettingsForm({
       });
       if (result.success) {
         toast.success("Store settings saved!");
+        router.refresh();
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save settings");

@@ -1130,8 +1130,8 @@ export async function getAdminCustomers(params?: {
       role: users.role,
       createdAt: users.createdAt,
       lastLoginAt: users.lastLoginAt,
-      orderCount: sql<number>`(SELECT COUNT(*) FROM orders WHERE orders.user_id = ${users.userId})`,
-      totalSpent: sql<number>`COALESCE((SELECT SUM(total_amount) FROM orders WHERE orders.user_id = ${users.userId} AND payment_status = 'Completed'), 0)`,
+      orderCount: sql<number>`(SELECT COUNT(*) FROM orders o WHERE o.user_id = users.user_id)`,
+      totalSpent: sql<number>`COALESCE((SELECT SUM(o.total_amount) FROM orders o WHERE o.user_id = users.user_id AND o.payment_status = 'Completed'), 0)`,
     })
     .from(users)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
@@ -1790,6 +1790,7 @@ export async function upsertStoreSettings(data: {
   }
 
   revalidatePath("/studio/settings");
+  revalidatePath("/", "layout");
   // Bust cached site config so storefront picks up changes immediately
   revalidateTag("site-config");
   return { success: true };

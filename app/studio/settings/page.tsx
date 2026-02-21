@@ -4,7 +4,7 @@ import {
   getStoreSettings,
   getActiveCategoryList,
 } from "@/lib/actions/admin-actions";
-import { getPublicSiteConfig } from "@/lib/site-config";
+import { getSiteConfigUncached } from "@/lib/site-config";
 import { PageHeader } from "@/components/admin/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -28,7 +28,7 @@ export default async function SettingsPage() {
       getNewsletterSubscribers(),
       getStoreSettings(),
       getActiveCategoryList(),
-      getPublicSiteConfig(),
+      getSiteConfigUncached(),
     ]);
 
   return (

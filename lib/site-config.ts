@@ -124,6 +124,12 @@ async function _fetchSiteConfig(): Promise<PublicSiteConfig> {
 }
 
 /**
+ * Uncached version — always fetches fresh data from DB.
+ * Use in admin pages where stale data is unacceptable.
+ */
+export const getSiteConfigUncached = _fetchSiteConfig;
+
+/**
  * Cached version of site config — survives across requests.
  * Revalidates every 300 seconds (5 min) or when "site-config" tag is invalidated.
  * Use revalidateTag("site-config") after admin updates settings.
