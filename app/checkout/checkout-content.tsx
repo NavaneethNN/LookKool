@@ -150,7 +150,12 @@ export function CheckoutContent({
   async function handleApplyCoupon() {
     if (!couponCode.trim()) return;
     setCouponLoading(true);
-    const result = await validateCoupon(couponCode.trim(), cartTotal);
+    // Build per-product line items for scope-based coupon validation
+    const cartItems = items.map((i) => ({
+      productId: i.productId,
+      lineTotal: i.price * i.quantity,
+    }));
+    const result = await validateCoupon(couponCode.trim(), cartTotal, cartItems);
     if (result.error) {
       toast.error(result.error);
       setCouponApplied(null);

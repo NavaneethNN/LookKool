@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   createCoupon,
   updateCoupon,
   deleteCoupon,
   toggleCouponActive,
+  getProductListForSelector,
+  getActiveCategoryList,
+  getCouponScope,
 } from "@/lib/actions/admin-actions";
 import {
   Dialog,
@@ -26,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Power } from "lucide-react";
+import { Plus, Pencil, Trash2, Power, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 type Coupon = {
@@ -46,6 +49,9 @@ type Coupon = {
   [key: string]: unknown;
 };
 
+type ProductOption = { productId: number; productName: string; productCode: string | null };
+type CategoryOption = { categoryId: number; categoryName: string; slug: string };
+
 function toDateInput(d: Date | null) {
   if (!d) return "";
   return new Date(d).toISOString().slice(0, 16);
@@ -57,10 +63,96 @@ export function CouponActions({ coupon }: { coupon?: Coupon }) {
   const [loading, setLoading] = useState(false);
   const isEdit = !!coupon;
 
+  // Scope state
+  const [scope, setScope] = useState<"all" | "restricted">(
+    coupon?.appliesToAllProducts !== false ? "all" : "restricted"
+  );
+  const [allProducts, setAllProducts] = useState<ProductOption[]>([]);
+  const [allCategories, setAllCategories] = useState<CategoryOption[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [selectorLoading, setSelectorLoading] = useState(false);
+
+  // Load product/category lists when dialog opens with "restricted" scope
+  useEffect(() => {
+    if (!open) return;
+    if (scope !== "restricted") return;
+    if (allProducts.length > 0) return; // already loaded
+
+    setSelectorLoading(true);
+    Promise.all([getProductListForSelector(), getActiveCategoryList()])
+      .then(([prods, cats]) => {
+        setAllProducts(prods);
+        setAllCategories(cats);
+      })
+      .catch(() => toast.error("Failed to load product/category list"))
+      .finally(() => setSelectorLoading(false));
+  }, [open, scope, allProducts.length]);
+
+  // Load existing scope when editing a restricted coupon
+  useEffect(() => {
+    if (!open || !isEdit || coupon.appliesToAllProducts !== false) return;
+
+    getCouponScope(coupon.couponId)
+      .then(({ productIds, categoryIds }) => {
+        setSelectedProductIds(productIds);
+        setSelectedCategoryIds(categoryIds);
+      })
+      .catch(() => {});
+  }, [open, isEdit, coupon?.couponId, coupon?.appliesToAllProducts]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setProductSearch("");
+      // Reset selections on close (will reload on next open if edit)
+      if (!isEdit) {
+        setSelectedProductIds([]);
+        setSelectedCategoryIds([]);
+        setScope("all");
+      }
+    }
+  }, [open, isEdit]);
+
+  const filteredProducts = useMemo(() => {
+    if (!productSearch.trim()) return allProducts;
+    const q = productSearch.toLowerCase();
+    return allProducts.filter(
+      (p) =>
+        p.productName.toLowerCase().includes(q) ||
+        (p.productCode && p.productCode.toLowerCase().includes(q))
+    );
+  }, [allProducts, productSearch]);
+
+  function toggleProduct(productId: number) {
+    setSelectedProductIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
+  }
+
+  function toggleCategory(categoryId: number) {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     const fd = new FormData(e.currentTarget);
+
+    const isRestricted = scope === "restricted";
+
+    if (isRestricted && selectedProductIds.length === 0 && selectedCategoryIds.length === 0) {
+      toast.error("Please select at least one product or category for restricted scope");
+      setLoading(false);
+      return;
+    }
 
     const data = {
       code: fd.get("code") as string,
@@ -81,8 +173,10 @@ export function CouponActions({ coupon }: { coupon?: Coupon }) {
       usageLimitPerCustomer: fd.get("usageLimitPerCustomer")
         ? Number(fd.get("usageLimitPerCustomer"))
         : undefined,
-      appliesToAllProducts: fd.get("scope") === "all",
+      appliesToAllProducts: !isRestricted,
       isActive: true,
+      productIds: isRestricted ? selectedProductIds : [],
+      categoryIds: isRestricted ? selectedCategoryIds : [],
     };
 
     try {
@@ -290,7 +384,8 @@ export function CouponActions({ coupon }: { coupon?: Coupon }) {
               <Label>Scope</Label>
               <Select
                 name="scope"
-                defaultValue={coupon?.appliesToAllProducts !== false ? "all" : "restricted"}
+                value={scope}
+                onValueChange={(v) => setScope(v as "all" | "restricted")}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -301,6 +396,120 @@ export function CouponActions({ coupon }: { coupon?: Coupon }) {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* ── Product / Category selector ── */}
+            {scope === "restricted" && (
+              <div className="space-y-3 rounded-lg border p-3 bg-gray-50/50">
+                {selectorLoading ? (
+                  <p className="text-sm text-gray-500 text-center py-2">Loading products &amp; categories…</p>
+                ) : (
+                  <>
+                    {/* Categories */}
+                    {allCategories.length > 0 && (
+                      <div>
+                        <Label className="text-xs font-semibold text-gray-600 mb-1.5 block">
+                          Categories ({selectedCategoryIds.length} selected)
+                        </Label>
+                        <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                          {allCategories.map((cat) => {
+                            const sel = selectedCategoryIds.includes(cat.categoryId);
+                            return (
+                              <button
+                                key={cat.categoryId}
+                                type="button"
+                                onClick={() => toggleCategory(cat.categoryId)}
+                                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                  sel
+                                    ? "bg-primary text-white border-primary"
+                                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                                }`}
+                              >
+                                {cat.categoryName}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Products */}
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-600 mb-1.5 block">
+                        Products ({selectedProductIds.length} selected)
+                      </Label>
+                      <div className="relative mb-2">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                        <Input
+                          placeholder="Search products…"
+                          value={productSearch}
+                          onChange={(e) => setProductSearch(e.target.value)}
+                          className="pl-8 h-8 text-sm"
+                        />
+                        {productSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setProductSearch("")}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                          >
+                            <X className="w-3.5 h-3.5 text-gray-400" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Selected chips */}
+                      {selectedProductIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {selectedProductIds.map((pid) => {
+                            const prod = allProducts.find((p) => p.productId === pid);
+                            return (
+                              <span
+                                key={pid}
+                                className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full"
+                              >
+                                {prod?.productName ?? `#${pid}`}
+                                <button
+                                  type="button"
+                                  onClick={() => toggleProduct(pid)}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div className="max-h-40 overflow-y-auto border rounded-md bg-white divide-y">
+                        {filteredProducts.length === 0 ? (
+                          <p className="text-xs text-gray-400 text-center py-3">No products found</p>
+                        ) : (
+                          filteredProducts.map((p) => {
+                            const sel = selectedProductIds.includes(p.productId);
+                            return (
+                              <label
+                                key={p.productId}
+                                className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 text-sm"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={sel}
+                                  onChange={() => toggleProduct(p.productId)}
+                                  className="accent-primary rounded"
+                                />
+                                <span className="flex-1 truncate">{p.productName}</span>
+                                {p.productCode && (
+                                  <span className="text-xs text-gray-400">{p.productCode}</span>
+                                )}
+                              </label>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button

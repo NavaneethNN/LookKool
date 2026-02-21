@@ -10,11 +10,13 @@ import {
   products,
   coupons,
   couponUsage,
+  couponProducts,
+  couponCategories,
   users,
   deliverySettings,
   storeSettings,
 } from "@/db/schema";
-import { eq, and, sql, asc, count } from "drizzle-orm";
+import { eq, and, sql, asc, count, inArray } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { sendOrderConfirmation } from "@/lib/email/brevo";
 import { createNotification, notifyAdmins } from "@/lib/actions/notification-actions";
@@ -155,7 +157,18 @@ async function getAuthUser() {
 
 // ─── Coupon validation (secured) ───────────────────────────────
 
-export async function validateCoupon(code: string, subtotal: number) {
+/**
+ * Validate a coupon code against the cart.
+ * @param code       - coupon code
+ * @param subtotal   - full cart subtotal
+ * @param cartItems  - optional per-product line items for scope-based coupons
+ *                     (each { productId, lineTotal } where lineTotal = price * qty)
+ */
+export async function validateCoupon(
+  code: string,
+  subtotal: number,
+  cartItems?: { productId: number; lineTotal: number }[]
+) {
   // Require authentication for coupon validation to prevent brute-force
   const user = await getAuthUser();
 
@@ -224,9 +237,58 @@ export async function validateCoupon(code: string, subtotal: number) {
     };
   }
 
+  // ─── Determine eligible subtotal based on coupon scope ────
+  let eligibleSubtotal = subtotal;
+
+  if (!coupon.appliesToAllProducts && cartItems && cartItems.length > 0) {
+    // Fetch product IDs directly assigned to this coupon
+    const scopeProductRows = await db
+      .select({ productId: couponProducts.productId })
+      .from(couponProducts)
+      .where(eq(couponProducts.couponId, coupon.couponId));
+    const scopeProductIds = new Set(scopeProductRows.map((r) => r.productId));
+
+    // Fetch category IDs assigned to this coupon
+    const scopeCategoryRows = await db
+      .select({ categoryId: couponCategories.categoryId })
+      .from(couponCategories)
+      .where(eq(couponCategories.couponId, coupon.couponId));
+    const scopeCategoryIds = scopeCategoryRows.map((r) => r.categoryId);
+
+    // If coupon has category scope, find which cart products fall in those categories
+    let categoryProductIds = new Set<number>();
+    if (scopeCategoryIds.length > 0) {
+      const cartProductIds = cartItems.map((i) => i.productId);
+      if (cartProductIds.length > 0) {
+        const matchingProducts = await db
+          .select({ productId: products.productId })
+          .from(products)
+          .where(
+            and(
+              inArray(products.productId, cartProductIds),
+              inArray(products.categoryId, scopeCategoryIds)
+            )
+          );
+        categoryProductIds = new Set(matchingProducts.map((r) => r.productId));
+      }
+    }
+
+    // Calculate eligible amount from items matching product or category scope
+    eligibleSubtotal = cartItems.reduce((sum, item) => {
+      if (scopeProductIds.has(item.productId) || categoryProductIds.has(item.productId)) {
+        return sum + item.lineTotal;
+      }
+      return sum;
+    }, 0);
+
+    if (eligibleSubtotal <= 0) {
+      return { error: "This coupon doesn't apply to any items in your cart" };
+    }
+  }
+
   let discount = 0;
   if (coupon.discountType === "percentage") {
-    discount = (subtotal * parseFloat(coupon.discountValue)) / 100;
+    discount = (eligibleSubtotal * parseFloat(coupon.discountValue)) / 100;
     if (coupon.maxDiscountAmount) {
       discount = Math.min(discount, parseFloat(coupon.maxDiscountAmount));
     }
@@ -234,8 +296,8 @@ export async function validateCoupon(code: string, subtotal: number) {
     discount = parseFloat(coupon.discountValue);
   }
 
-  // Never more than subtotal, and ensure non-negative
-  discount = Math.max(0, Math.min(discount, subtotal));
+  // Never more than eligible subtotal, and ensure non-negative
+  discount = Math.max(0, Math.min(discount, eligibleSubtotal));
   discount = Math.round(discount * 100) / 100;
 
   return {
@@ -451,7 +513,12 @@ export async function createOrder(input: CreateOrderInput) {
 
   // Apply coupon if provided (single validation, capture couponId)
   if (couponCode) {
-    const couponResult = await validateCoupon(couponCode, subtotal);
+    // Build per-product line items for scope-based validation
+    const couponCartItems = verifiedItems.map((v) => ({
+      productId: v.productId,
+      lineTotal: v.price * v.quantity,
+    }));
+    const couponResult = await validateCoupon(couponCode, subtotal, couponCartItems);
     if (couponResult.error) {
       // Roll back stock before returning error
       for (const item of verifiedItems) {

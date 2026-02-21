@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { LayoutShell } from "@/components/layout/layout-shell";
 import { getPublicSiteConfig, hexToHsl } from "@/lib/site-config";
 import { cache } from "react";
 import "./globals.css";
@@ -102,11 +103,12 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
-        <Navbar
-          siteConfig={siteConfig}
-        />
-        <main className="flex-1">{children}</main>
-        <Footer siteConfig={siteConfig} />
+        <LayoutShell
+          navbar={<Navbar siteConfig={siteConfig} />}
+          footer={<Footer siteConfig={siteConfig} />}
+        >
+          {children}
+        </LayoutShell>
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>

@@ -13,6 +13,8 @@ import {
   returnRequests,
   reviews,
   coupons,
+  couponProducts,
+  couponCategories,
   newsletter,
   deliverySettings,
   storeSettings,
@@ -1268,6 +1270,41 @@ export async function getAdminCoupons() {
   });
 }
 
+/** Lightweight product list for coupon product picker. */
+export async function getProductListForSelector() {
+  await requireAdmin();
+
+  return db
+    .select({
+      productId: products.productId,
+      productName: products.productName,
+      productCode: products.productCode,
+    })
+    .from(products)
+    .where(eq(products.isActive, true))
+    .orderBy(asc(products.productName));
+}
+
+/** Get the product/category IDs currently assigned to a coupon. */
+export async function getCouponScope(couponId: number) {
+  await requireAdmin();
+
+  const productRows = await db
+    .select({ productId: couponProducts.productId })
+    .from(couponProducts)
+    .where(eq(couponProducts.couponId, couponId));
+
+  const categoryRows = await db
+    .select({ categoryId: couponCategories.categoryId })
+    .from(couponCategories)
+    .where(eq(couponCategories.couponId, couponId));
+
+  return {
+    productIds: productRows.map((r) => r.productId),
+    categoryIds: categoryRows.map((r) => r.categoryId),
+  };
+}
+
 export async function createCoupon(data: {
   code: string;
   description?: string;
@@ -1281,6 +1318,8 @@ export async function createCoupon(data: {
   usageLimitPerCustomer?: number;
   appliesToAllProducts?: boolean;
   isActive?: boolean;
+  productIds?: number[];
+  categoryIds?: number[];
 }) {
   await requireAdmin();
 
@@ -1317,6 +1356,26 @@ export async function createCoupon(data: {
     })
     .returning();
 
+  // Save product/category scope if restricted
+  if (!coupon.appliesToAllProducts) {
+    if (data.productIds && data.productIds.length > 0) {
+      await db.insert(couponProducts).values(
+        data.productIds.map((pid) => ({
+          couponId: coupon.couponId,
+          productId: pid,
+        }))
+      );
+    }
+    if (data.categoryIds && data.categoryIds.length > 0) {
+      await db.insert(couponCategories).values(
+        data.categoryIds.map((cid) => ({
+          couponId: coupon.couponId,
+          categoryId: cid,
+        }))
+      );
+    }
+  }
+
   revalidatePath("/studio/coupons");
   return coupon;
 }
@@ -1336,6 +1395,8 @@ export async function updateCoupon(
     usageLimitPerCustomer?: number | null;
     appliesToAllProducts?: boolean;
     isActive?: boolean;
+    productIds?: number[];
+    categoryIds?: number[];
   }
 ) {
   await requireAdmin();
@@ -1374,6 +1435,32 @@ export async function updateCoupon(
     .update(coupons)
     .set(updateData)
     .where(eq(coupons.couponId, couponId));
+
+  // Sync product/category scope
+  if (data.appliesToAllProducts !== undefined) {
+    // Clear old junction rows
+    await db.delete(couponProducts).where(eq(couponProducts.couponId, couponId));
+    await db.delete(couponCategories).where(eq(couponCategories.couponId, couponId));
+
+    if (!data.appliesToAllProducts) {
+      if (data.productIds && data.productIds.length > 0) {
+        await db.insert(couponProducts).values(
+          data.productIds.map((pid) => ({
+            couponId,
+            productId: pid,
+          }))
+        );
+      }
+      if (data.categoryIds && data.categoryIds.length > 0) {
+        await db.insert(couponCategories).values(
+          data.categoryIds.map((cid) => ({
+            couponId,
+            categoryId: cid,
+          }))
+        );
+      }
+    }
+  }
 
   revalidatePath("/studio/coupons");
   return { success: true };
