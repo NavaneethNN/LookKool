@@ -69,8 +69,8 @@ export function ReturnResolve({
       }
       setOpen(false);
       router.refresh();
-    } catch {
-      toast.error("Failed to update return");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update return");
     }
     setLoading(false);
   }

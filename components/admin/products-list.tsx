@@ -210,8 +210,8 @@ export function ProductsList({
       try {
         await toggleProductActive(id, !currentActive);
         toast.success("Status updated");
-      } catch {
-        toast.error("Failed to update status");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update status");
       }
     });
   }
@@ -227,8 +227,8 @@ export function ProductsList({
           return n;
         });
         toast.success("Product deleted");
-      } catch {
-        toast.error("Failed to delete product");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to delete product");
       }
     });
   }
@@ -239,8 +239,8 @@ export function ProductsList({
         const p = await duplicateProduct(id);
         toast.success("Product duplicated");
         router.push(`/studio/products/${p.productId}`);
-      } catch {
-        toast.error("Failed to duplicate product");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to duplicate product");
       }
     });
   }
@@ -253,8 +253,8 @@ export function ProductsList({
         toast.success(
           `${selected.size} products ${active ? "activated" : "deactivated"}`
         );
-      } catch {
-        toast.error("Bulk action failed");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Bulk action failed");
       }
     });
   }
@@ -266,8 +266,8 @@ export function ProductsList({
         setSelected(new Set());
         setBulkDeleteConfirm(false);
         toast.success("Products deleted");
-      } catch {
-        toast.error("Bulk delete failed");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Bulk delete failed");
       }
     });
   }
@@ -278,8 +278,8 @@ export function ProductsList({
         await bulkUpdateProductCategory(Array.from(selected), catId);
         setSelected(new Set());
         toast.success("Category updated for selected products");
-      } catch {
-        toast.error("Failed to update category");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update category");
       }
     });
   }

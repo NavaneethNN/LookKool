@@ -28,8 +28,8 @@ export function BackupManager({ initialStats }: { initialStats: Stats }) {
     try {
       const s = await getBackupStats();
       setStats(s);
-    } catch {
-      toast.error("Failed to refresh stats");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to refresh stats");
     } finally {
       setRefreshing(false);
     }
@@ -48,8 +48,8 @@ export function BackupManager({ initialStats }: { initialStats: Stats }) {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Backup downloaded successfully!");
-    } catch {
-      toast.error("Failed to generate backup");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate backup");
     } finally {
       setDownloading(false);
     }

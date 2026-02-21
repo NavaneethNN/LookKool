@@ -109,8 +109,8 @@ export function CouponActions({ coupon }: { coupon?: Coupon }) {
       await deleteCoupon(coupon.couponId);
       toast.success("Coupon deleted");
       router.refresh();
-    } catch {
-      toast.error("Failed to delete coupon");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete coupon");
     }
     setLoading(false);
   }
@@ -122,8 +122,8 @@ export function CouponActions({ coupon }: { coupon?: Coupon }) {
       await toggleCouponActive(coupon.couponId, !coupon.isActive);
       toast.success(coupon.isActive ? "Coupon deactivated" : "Coupon activated");
       router.refresh();
-    } catch {
-      toast.error("Failed to toggle coupon");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to toggle coupon");
     }
     setLoading(false);
   }

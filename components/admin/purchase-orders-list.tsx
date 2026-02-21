@@ -128,8 +128,8 @@ export function PurchaseOrdersList() {
       setOrders(result.orders as unknown as PO[]);
       setPage(result.page);
       setTotalPages(result.totalPages);
-    } catch {
-      toast.error("Failed to load purchase orders");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load purchase orders");
     } finally {
       setLoading(false);
     }
@@ -145,8 +145,8 @@ export function PurchaseOrdersList() {
     try {
       const supList = await getSuppliersList();
       setSuppliers(supList);
-    } catch {
-      toast.error("Failed to load suppliers");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load suppliers");
     }
   };
 
@@ -200,8 +200,8 @@ export function PurchaseOrdersList() {
       toast.success("Purchase order created");
       setCreateOpen(false);
       loadOrders(1, search || undefined, statusFilter);
-    } catch {
-      toast.error("Failed to create purchase order");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create purchase order");
     } finally {
       setSaving(false);
     }
@@ -218,8 +218,8 @@ export function PurchaseOrdersList() {
         setReceiveQtys(qtys);
       }
       setDetailOpen(true);
-    } catch {
-      toast.error("Failed to load details");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load details");
     }
   };
 
@@ -235,8 +235,8 @@ export function PurchaseOrdersList() {
       toast.success("Stock received and updated");
       setDetailOpen(false);
       loadOrders(page, search || undefined, statusFilter);
-    } catch {
-      toast.error("Failed to receive stock");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to receive stock");
     } finally {
       setReceiving(false);
     }

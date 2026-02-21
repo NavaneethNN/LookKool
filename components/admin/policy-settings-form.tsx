@@ -59,8 +59,8 @@ export function PolicySettingsForm({
       } else {
         toast.error("Failed to save settings");
       }
-    } catch {
-      toast.error("Something went wrong");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
     }
     setSaving(false);
   }

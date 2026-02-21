@@ -84,8 +84,8 @@ export function CategoryActions({
           toast.success("Category created");
         }
         setOpen(false);
-      } catch {
-        toast.error("Failed to save category");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save category");
       }
     });
   }
@@ -99,8 +99,8 @@ export function CategoryActions({
       try {
         await deleteCategory(editCategory.categoryId);
         toast.success("Category deleted");
-      } catch {
-        toast.error("Failed to delete category");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to delete category");
       }
     });
   }

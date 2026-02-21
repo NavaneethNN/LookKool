@@ -94,8 +94,8 @@ export function InventoryManager({ initialOverview, initialLowStock, initialAdju
       setOverview(o);
       setLowStockResult(ls);
       setAdjustmentsResult(adj);
-    } catch {
-      toast.error("Failed to refresh data");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to refresh data");
     } finally {
       setRefreshing(false);
     }
@@ -105,8 +105,8 @@ export function InventoryManager({ initialOverview, initialLowStock, initialAdju
     try {
       const result = await getStockAdjustments({ page });
       setAdjustmentsResult(result);
-    } catch {
-      toast.error("Failed to load adjustments");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load adjustments");
     }
   };
 
@@ -115,8 +115,8 @@ export function InventoryManager({ initialOverview, initialLowStock, initialAdju
     try {
       const results = await searchProductsForBilling(adjSearch);
       setAdjSearchResults(results as unknown as typeof adjSearchResults);
-    } catch {
-      toast.error("Search failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Search failed");
     }
   };
 
@@ -151,8 +151,8 @@ export function InventoryManager({ initialOverview, initialLowStock, initialAdju
       setAdjQty("");
       setAdjReason("");
       refreshData();
-    } catch {
-      toast.error("Failed to adjust stock");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to adjust stock");
     } finally {
       setSubmittingAdj(false);
     }

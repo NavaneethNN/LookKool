@@ -23,8 +23,8 @@ export function ReviewActions({
       await toggleReviewApproval(reviewId, !isApproved);
       toast.success(isApproved ? "Review hidden" : "Review approved");
       router.refresh();
-    } catch {
-      toast.error("Failed to update review");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update review");
     }
     setLoading(false);
   }
@@ -36,8 +36,8 @@ export function ReviewActions({
       await deleteReview(reviewId);
       toast.success("Review deleted");
       router.refresh();
-    } catch {
-      toast.error("Failed to delete review");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete review");
     }
     setLoading(false);
   }

@@ -42,8 +42,8 @@ function SalesReport() {
     try {
       const result = await getSalesReport({ from: fromDate, to: toDate });
       setData(result);
-    } catch {
-      toast.error("Failed to load sales report");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load sales report");
     } finally {
       setLoading(false);
     }
@@ -154,8 +154,8 @@ function ProfitReport() {
     try {
       const result = await getProfitReport({ from: fromDate, to: toDate });
       setData(result);
-    } catch {
-      toast.error("Failed to load profit report");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load profit report");
     } finally {
       setLoading(false);
     }
@@ -233,8 +233,8 @@ function GstReport() {
     try {
       const result = await getGstReport({ from: fromDate, to: toDate });
       setData(result);
-    } catch {
-      toast.error("Failed to load GST report");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load GST report");
     } finally {
       setLoading(false);
     }
@@ -359,8 +359,8 @@ function StockReport() {
     try {
       const result = await getStockReport();
       setData(result);
-    } catch {
-      toast.error("Failed to load stock report");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load stock report");
     } finally {
       setLoading(false);
     }

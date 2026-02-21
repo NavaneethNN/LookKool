@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo, useCallback } from "react";
 import {
   createVariant,
   deleteVariant,
+  bulkDeleteVariants,
   updateVariant,
   bulkCreateVariants,
   bulkUpdateStock,
@@ -246,8 +247,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
         await bulkUpdateStock(updates);
         toast.success(`${updates.length} stock value(s) updated`);
         setStockEdits({});
-      } catch {
-        toast.error("Failed to update stock");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update stock");
       }
     });
   }
@@ -275,8 +276,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
         });
         toast.success("Variant updated");
         setEditingVariant(null);
-      } catch {
-        toast.error("Failed to update variant");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update variant");
       }
     });
   }
@@ -320,8 +321,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
           price: "",
           mrp: "",
         });
-      } catch {
-        toast.error("Failed to create variants");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to create variants");
       }
     });
   }
@@ -357,8 +358,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
           price: "",
           mrp: "",
         });
-      } catch {
-        toast.error("Failed to create variant");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to create variant");
       }
     });
   }
@@ -371,8 +372,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
       try {
         await deleteVariant(variantId);
         toast.success("Variant deleted");
-      } catch {
-        toast.error("Failed to delete variant");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to delete variant");
       }
     });
   }
@@ -386,17 +387,15 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
       return;
     startTransition(async () => {
       try {
-        for (const v of group.variants) {
-          await deleteVariant(v.variantId);
-        }
+        await bulkDeleteVariants(group.variants.map((v) => v.variantId));
         toast.success(`Deleted all "${group.color}" variants`);
         setExpandedColors((prev) => {
           const next = new Set(prev);
           next.delete(group.color);
           return next;
         });
-      } catch {
-        toast.error("Failed to delete some variants");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to delete variants");
       }
     });
   }
@@ -426,8 +425,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
           await setVariantPrimaryImage(variant.variantId, action.id);
           toast.success("Primary image set");
         }
-      } catch {
-        toast.error("Image action failed");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Image action failed");
       }
     });
   }
@@ -437,8 +436,8 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
       try {
         await updateVariant(variantId, { hexcode: hex });
         toast.success("Color updated");
-      } catch {
-        toast.error("Failed to update color");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update color");
       }
     });
   }
@@ -1342,8 +1341,8 @@ function AddSizeCard({
         setIsAdding(false);
         setSize("");
         setStock(10);
-      } catch {
-        toast.error("Failed to add size");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to add size");
       }
     });
   }

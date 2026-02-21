@@ -659,6 +659,33 @@ export async function deleteVariant(variantId: number) {
   return { success: true };
 }
 
+/**
+ * Atomically delete multiple variants (e.g. an entire color group).
+ * Pre-checks ALL variants for order item references before deleting any.
+ */
+export async function bulkDeleteVariants(variantIds: number[]) {
+  await requireAdmin();
+
+  if (variantIds.length === 0) return { success: true, deleted: 0 };
+
+  // Safety check: ensure no order items reference ANY of these variants
+  const [orderItemRef] = await db
+    .select({ count: count() })
+    .from(orderItems)
+    .where(inArray(orderItems.variantId, variantIds));
+  if (orderItemRef && orderItemRef.count > 0) {
+    throw new Error(
+      "Cannot delete variants with existing order items. Some sizes in this color have been ordered."
+    );
+  }
+
+  // Single atomic delete — cascades handle images, cart entries
+  await db.delete(productVariants).where(inArray(productVariants.variantId, variantIds));
+
+  revalidatePath("/studio/products");
+  return { success: true, deleted: variantIds.length };
+}
+
 export async function updateStock(variantId: number, stockCount: number) {
   await requireAdmin();
 
@@ -767,9 +794,8 @@ export async function bulkDeleteProducts(productIds: number[]) {
     throw new Error("Cannot delete products with existing order items. Deactivate them instead.");
   }
 
-  for (const id of productIds) {
-    await db.delete(products).where(eq(products.productId, id));
-  }
+  // Single atomic delete — cascades handle variants, images, reviews, wishlist, cart
+  await db.delete(products).where(inArray(products.productId, productIds));
 
   revalidatePath("/studio/products");
   return { success: true, deleted: productIds.length };

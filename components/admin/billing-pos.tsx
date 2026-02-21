@@ -143,8 +143,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
     try {
       const results = await searchProductsForBilling(q);
       setSearchResults(results);
-    } catch {
-      toast.error("Search failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Search failed");
     } finally {
       setSearching(false);
     }
@@ -305,8 +305,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
       setBillSuccessOpen(true);
       clearCart();
       toast.success("Bill created successfully!");
-    } catch {
-      toast.error("Failed to create bill");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create bill");
     } finally {
       setSubmitting(false);
     }
@@ -321,8 +321,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
       setBillsTotal(result.total);
       setBillsPage(result.page);
       setBillsTotalPages(result.totalPages);
-    } catch {
-      toast.error("Failed to load bills");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load bills");
     } finally {
       setLoadingBills(false);
     }

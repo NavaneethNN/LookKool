@@ -70,8 +70,8 @@ export function SuppliersList() {
       setTotal(result.total);
       setPage(result.page);
       setTotalPages(result.totalPages);
-    } catch {
-      toast.error("Failed to load suppliers");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load suppliers");
     } finally {
       setLoading(false);
     }
@@ -112,8 +112,8 @@ export function SuppliersList() {
       }
       setDialogOpen(false);
       loadSuppliers(page, search || undefined);
-    } catch {
-      toast.error("Failed to save supplier");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save supplier");
     } finally {
       setSaving(false);
     }
@@ -125,8 +125,8 @@ export function SuppliersList() {
       await deleteSupplier(id);
       toast.success("Supplier deleted");
       loadSuppliers(page, search || undefined);
-    } catch {
-      toast.error("Failed to delete supplier");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete supplier");
     }
   };
 

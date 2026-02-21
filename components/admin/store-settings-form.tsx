@@ -491,8 +491,8 @@ export function StoreSettingsForm({
       if (result.success) {
         toast.success("Store settings saved!");
       }
-    } catch {
-      toast.error("Failed to save settings");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save settings");
     } finally {
       setSaving(false);
     }

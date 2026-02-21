@@ -453,8 +453,8 @@ export function SiteAppearanceForm({
       if (result.success) {
         toast.success("Site appearance saved! Reload the page to see changes.");
       }
-    } catch {
-      toast.error("Failed to save settings");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save settings");
     } finally {
       setSaving(false);
     }

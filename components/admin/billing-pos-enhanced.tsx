@@ -252,8 +252,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
       });
 
       toast.success(`Added: ${result.productName} (${result.color}/${result.size})`);
-    } catch {
-      toast.error("Barcode scan failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Barcode scan failed");
     }
   }, [hsnCode]);
 
@@ -313,8 +313,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
     try {
       const results = await searchProductsForBilling(q);
       setSearchResults(results);
-    } catch {
-      toast.error("Search failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Search failed");
     } finally {
       setSearching(false);
     }
@@ -533,8 +533,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
       setBillSuccessOpen(true);
       clearCart();
       toast.success("Bill created successfully!");
-    } catch {
-      toast.error("Failed to create bill");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create bill");
     } finally {
       setSubmitting(false);
     }
@@ -549,8 +549,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
       setBillsTotal(result.total);
       setBillsPage(result.page);
       setBillsTotalPages(result.totalPages);
-    } catch {
-      toast.error("Failed to load bills");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load bills");
     } finally {
       setLoadingBills(false);
     }
@@ -606,11 +606,11 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
           selected: false,
           returnQty: 0,
         })));
-      } catch {
-        toast.error("Could not parse bill items");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Could not parse bill items");
       }
-    } catch {
-      toast.error("Search failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Search failed");
     }
   };
 
@@ -648,8 +648,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
       }
 
       setReturnDialogOpen(false);
-    } catch {
-      toast.error("Failed to process return");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to process return");
     } finally {
       setProcessingReturn(false);
     }

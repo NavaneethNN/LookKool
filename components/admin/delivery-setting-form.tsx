@@ -55,8 +55,8 @@ export function DeliverySettingForm({ setting }: { setting?: Setting }) {
       toast.success(isEdit ? "Setting updated" : "Setting created");
       setShowForm(false);
       router.refresh();
-    } catch {
-      toast.error("Failed to save setting");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save setting");
     }
     setLoading(false);
   }

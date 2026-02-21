@@ -133,8 +133,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           toast.success("Product created — now add variants & images");
           router.push(`/studio/products/${newProduct.productId}`);
         }
-      } catch {
-        toast.error("Failed to save product");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save product");
       }
     });
   }

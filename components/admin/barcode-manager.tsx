@@ -82,8 +82,8 @@ export function BarcodeManager() {
       setTotal(result.total);
       setPage(result.page);
       setTotalPages(result.totalPages);
-    } catch {
-      toast.error("Failed to load variants");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load variants");
     } finally {
       setLoading(false);
     }
@@ -119,8 +119,8 @@ export function BarcodeManager() {
       toast.success(`Generated ${ids.length} barcodes`);
       loadVariants(page, search || undefined, onlyMissing);
       setSelected(new Set());
-    } catch {
-      toast.error("Failed to generate barcodes");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate barcodes");
     } finally {
       setGenerating(false);
     }
@@ -134,8 +134,8 @@ export function BarcodeManager() {
       toast.success("Barcode updated");
       setEditingBarcode(prev => { const n = { ...prev }; delete n[variantId]; return n; });
       loadVariants(page, search || undefined, onlyMissing);
-    } catch {
-      toast.error("Failed to update barcode");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update barcode");
     }
   };
 

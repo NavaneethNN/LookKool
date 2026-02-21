@@ -46,8 +46,8 @@ export function ProductDetailActions({
         const p = await duplicateProduct(productId);
         toast.success("Product duplicated — editing the copy now");
         router.push(`/studio/products/${p.productId}`);
-      } catch {
-        toast.error("Failed to duplicate product");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to duplicate product");
       }
     });
   }
@@ -58,8 +58,8 @@ export function ProductDetailActions({
         await toggleProductActive(productId, !isActive);
         toast.success("Status updated");
         router.refresh();
-      } catch {
-        toast.error("Failed to update status");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update status");
       }
     });
   }
@@ -70,8 +70,8 @@ export function ProductDetailActions({
         await deleteProduct(productId);
         toast.success("Product deleted");
         router.push("/studio/products");
-      } catch {
-        toast.error("Failed to delete product");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to delete product");
       }
     });
   }

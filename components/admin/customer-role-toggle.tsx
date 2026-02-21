@@ -39,8 +39,8 @@ export function CustomerRoleToggle({
       try {
         await updateUserRole(userId, newRole);
         toast.success(`Role updated to ${roleConfig[newRole].label}`);
-      } catch {
-        toast.error("Failed to update role");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update role");
       }
     });
   }

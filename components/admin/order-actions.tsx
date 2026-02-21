@@ -46,8 +46,8 @@ export function OrderActions({ order }: OrderActionsProps) {
     try {
       await updateOrderStatus(order.orderId, status);
       toast.success("Order status updated");
-    } catch {
-      toast.error("Failed to update order status");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update order status");
     }
     setLoading(null);
   }
@@ -57,8 +57,8 @@ export function OrderActions({ order }: OrderActionsProps) {
     try {
       await updatePaymentStatus(order.orderId, paymentStatus);
       toast.success("Payment status updated");
-    } catch {
-      toast.error("Failed to update payment status");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update payment status");
     }
     setLoading(null);
   }
@@ -68,8 +68,8 @@ export function OrderActions({ order }: OrderActionsProps) {
     try {
       await updateTrackingNumber(order.orderId, tracking);
       toast.success("Tracking number updated");
-    } catch {
-      toast.error("Failed to update tracking number");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update tracking number");
     }
     setLoading(null);
   }
@@ -79,8 +79,8 @@ export function OrderActions({ order }: OrderActionsProps) {
     try {
       await updateOrderNotes(order.orderId, notes);
       toast.success("Notes updated");
-    } catch {
-      toast.error("Failed to update notes");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update notes");
     }
     setLoading(null);
   }
