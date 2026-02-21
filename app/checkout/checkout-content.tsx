@@ -33,6 +33,7 @@ import {
   cancelPendingOrder,
 } from "@/lib/actions/checkout-actions";
 import { AddressForm } from "@/app/account/addresses/address-form";
+import { UpsellWidget } from "@/components/product/upsell-widget";
 
 // ── Razorpay type declaration ───────────────────────────────
 
@@ -534,6 +535,9 @@ export function CheckoutContent({
             )}
           </CardContent>
         </Card>
+
+        {/* Upsell – "Customers Also Added" */}
+        <UpsellWidget variant="checkout" deliveryConfig={deliveryConfig} />
       </div>
 
       {/* Right: Order Summary */}

@@ -12,6 +12,14 @@ const CartRecommendations = dynamic(
   { ssr: false }
 );
 
+const CartUpsell = dynamic(
+  () =>
+    import("@/components/product/upsell-widget").then(
+      (mod) => mod.UpsellWidget
+    ),
+  { ssr: false }
+);
+
 export async function generateMetadata(): Promise<Metadata> {
   const siteConfig = await getPublicSiteConfig();
   return {
@@ -27,6 +35,10 @@ export default async function CartPage() {
     <main className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold sm:text-3xl mb-8">Shopping Cart</h1>
       <CartContent deliveryConfig={deliveryConfig} />
+      <CartUpsell
+        variant="cart"
+        deliveryConfig={deliveryConfig}
+      />
       <CartRecommendations />
     </main>
   );

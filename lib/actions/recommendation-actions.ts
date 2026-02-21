@@ -672,3 +672,275 @@ export async function getProductsByIds(
 
   return shaped;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// 11. UPSELL PRODUCTS (for cart/checkout — with social proof data)
+// ═══════════════════════════════════════════════════════════════
+
+export interface UpsellProduct extends RecommendedProduct {
+  totalOrdered: number;       // all-time order count (social proof)
+  recentOrders: number;       // orders in last 7 days (urgency)
+  totalStock: number;         // sum across variants (scarcity)
+  discountPercent: number;    // anchoring: savings %
+}
+
+/**
+ * Fetch upsell candidates based on the products currently in the user's cart.
+ * Strategy:
+ *  1) Same-category products (similarity) — prioritized
+ *  2) Frequently bought together (co-purchase signal)
+ *  3) Enriched with stock / order-count data for scarcity & social proof
+ */
+export async function getUpsellProducts(
+  cartProductIds: number[],
+  limit: number = 6
+): Promise<UpsellProduct[]> {
+  limit = clampLimit(limit, 6);
+  if (cartProductIds.length === 0) return [];
+
+  cartProductIds = cartProductIds.filter((id) => Number.isInteger(id) && id > 0).slice(0, 50);
+  if (cartProductIds.length === 0) return [];
+
+  const excludeSet = new Set(cartProductIds);
+
+  // Look up categories for cart products
+  const catRows = await db
+    .selectDistinct({ categoryId: products.categoryId })
+    .from(products)
+    .where(
+      sql`${products.productId} IN (${sql.join(
+        cartProductIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`
+    );
+  const cartCategoryIds = catRows.map((r) => r.categoryId);
+
+  // ── 1. Same-category products, exclude what's already in cart ──
+  let categoryRows: {
+    productId: number;
+    productName: string;
+    slug: string;
+    basePrice: string;
+    mrp: string;
+    label: string | null;
+    categoryId: number;
+  }[] = [];
+
+  if (cartCategoryIds.length > 0) {
+    categoryRows = await db
+      .select({
+        productId: products.productId,
+        productName: products.productName,
+        slug: products.slug,
+        basePrice: products.basePrice,
+        mrp: products.mrp,
+        label: products.label,
+        categoryId: products.categoryId,
+      })
+      .from(products)
+      .where(
+        and(
+          sql`${products.categoryId} IN (${sql.join(
+            cartCategoryIds.map((id) => sql`${id}`),
+            sql`, `
+          )})`,
+          eq(products.isActive, true),
+          sql`${products.productId} NOT IN (${sql.join(
+            cartProductIds.map((id) => sql`${id}`),
+            sql`, `
+          )})`
+        )
+      )
+      .orderBy(asc(products.priority), desc(products.createdAt))
+      .limit(limit * 2); // fetch extra so we can merge
+  }
+
+  // ── 2. Co-purchase products ──
+  const ordersWithCart = db
+    .selectDistinct({ orderId: orderItems.orderId })
+    .from(orderItems)
+    .where(
+      sql`${orderItems.productId} IN (${sql.join(
+        cartProductIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`
+    )
+    .as("owc");
+
+  const freqExpr = sql<number>`count(*)`.as("freq");
+  const coRows = await db
+    .select({
+      productId: orderItems.productId,
+      freq: freqExpr,
+    })
+    .from(orderItems)
+    .innerJoin(ordersWithCart, eq(orderItems.orderId, ordersWithCart.orderId))
+    .where(
+      sql`${orderItems.productId} NOT IN (${sql.join(
+        cartProductIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`
+    )
+    .groupBy(orderItems.productId)
+    .orderBy(desc(freqExpr))
+    .limit(limit);
+
+  // Merge: category first, then co-purchase (deduplicate)
+  const seenIds = new Set<number>();
+  const mergedIds: number[] = [];
+
+  // Interleave: 2 category, 1 co-purchase for variety
+  let catIdx = 0;
+  let coIdx = 0;
+  while (mergedIds.length < limit) {
+    // Add up to 2 from category
+    for (let i = 0; i < 2 && catIdx < categoryRows.length && mergedIds.length < limit; catIdx++) {
+      const pid = categoryRows[catIdx].productId;
+      if (!seenIds.has(pid) && !excludeSet.has(pid)) {
+        seenIds.add(pid);
+        mergedIds.push(pid);
+        i++;
+      }
+    }
+    // Add 1 from co-purchase
+    while (coIdx < coRows.length && mergedIds.length < limit) {
+      const pid = coRows[coIdx].productId;
+      coIdx++;
+      if (!seenIds.has(pid) && !excludeSet.has(pid)) {
+        seenIds.add(pid);
+        mergedIds.push(pid);
+        break;
+      }
+    }
+    // Break if we exhausted both sources
+    if (catIdx >= categoryRows.length && coIdx >= coRows.length) break;
+  }
+
+  if (mergedIds.length === 0) return [];
+
+  // ── Fetch full product data ──
+  const productRows = await db
+    .select({
+      productId: products.productId,
+      productName: products.productName,
+      slug: products.slug,
+      basePrice: products.basePrice,
+      mrp: products.mrp,
+      label: products.label,
+    })
+    .from(products)
+    .where(
+      and(
+        sql`${products.productId} IN (${sql.join(
+          mergedIds.map((id) => sql`${id}`),
+          sql`, `
+        )})`,
+        eq(products.isActive, true)
+      )
+    );
+
+  // ── Enrichment: images, ratings, stock, order counts ──
+  const [images, ratings] = await Promise.all([
+    getPrimaryImages(mergedIds),
+    getRatings(mergedIds),
+  ]);
+
+  // Total stock per product
+  const stockRows = await db
+    .select({
+      productId: productVariants.productId,
+      totalStock: sql<number>`coalesce(sum(${productVariants.stockCount}), 0)`.as("total_stock"),
+    })
+    .from(productVariants)
+    .where(
+      sql`${productVariants.productId} IN (${sql.join(
+        mergedIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`
+    )
+    .groupBy(productVariants.productId);
+
+  const stockMap: Record<number, number> = {};
+  stockRows.forEach((r) => {
+    stockMap[r.productId] = Number(r.totalStock);
+  });
+
+  // Total order count (all time)
+  const totalOrderRows = await db
+    .select({
+      productId: orderItems.productId,
+      totalOrdered: sql<number>`coalesce(sum(${orderItems.quantity}), 0)`.as("total_ordered"),
+    })
+    .from(orderItems)
+    .where(
+      sql`${orderItems.productId} IN (${sql.join(
+        mergedIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`
+    )
+    .groupBy(orderItems.productId);
+
+  const totalOrderMap: Record<number, number> = {};
+  totalOrderRows.forEach((r) => {
+    totalOrderMap[r.productId] = Number(r.totalOrdered);
+  });
+
+  // Recent orders (last 7 days)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const recentOrderRows = await db
+    .select({
+      productId: orderItems.productId,
+      recentOrders: sql<number>`count(*)`.as("recent_orders"),
+    })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.orderId))
+    .where(
+      and(
+        sql`${orderItems.productId} IN (${sql.join(
+          mergedIds.map((id) => sql`${id}`),
+          sql`, `
+        )})`,
+        gte(orders.orderDate, sevenDaysAgo)
+      )
+    )
+    .groupBy(orderItems.productId);
+
+  const recentOrderMap: Record<number, number> = {};
+  recentOrderRows.forEach((r) => {
+    recentOrderMap[r.productId] = Number(r.recentOrders);
+  });
+
+  // ── Shape into UpsellProduct[] ──
+  const result: UpsellProduct[] = productRows.map((p) => {
+    const base = parseFloat(p.basePrice);
+    const mrp = parseFloat(p.mrp);
+    const discountPercent = mrp > 0 && mrp > base ? Math.round(((mrp - base) / mrp) * 100) : 0;
+
+    return {
+      productId: p.productId,
+      productName: p.productName,
+      slug: p.slug,
+      basePrice: base,
+      mrp,
+      label: p.label,
+      image: images[p.productId] ?? "",
+      rating: ratings[p.productId]?.avg,
+      reviewCount: ratings[p.productId]?.count,
+      totalOrdered: totalOrderMap[p.productId] ?? 0,
+      recentOrders: recentOrderMap[p.productId] ?? 0,
+      totalStock: stockMap[p.productId] ?? 0,
+      discountPercent,
+    };
+  });
+
+  // Maintain merged order
+  const orderMap = new Map(mergedIds.map((id, i) => [id, i]));
+  result.sort(
+    (a, b) =>
+      (orderMap.get(a.productId) ?? 99) - (orderMap.get(b.productId) ?? 99)
+  );
+
+  return result;
+}
