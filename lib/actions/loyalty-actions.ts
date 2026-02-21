@@ -5,7 +5,7 @@ import {
   users,
   loyaltyTransactions,
 } from "@/db/schema";
-import { eq, desc, sql, and, gte, lte, count, sum } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { revalidatePath } from "next/cache";
 

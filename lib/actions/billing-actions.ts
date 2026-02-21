@@ -12,7 +12,6 @@ import {
   products,
   inStoreBills,
   orders,
-  orderItems,
   storeSettings,
   users,
 } from "@/db/schema";
@@ -897,7 +896,7 @@ export async function getGstReport(params: { from: string; to: string }) {
   };
 }
 
-export async function getStockReport(params?: { category?: string; sortBy?: string }) {
+export async function getStockReport() {
   await requireAdmin();
 
   const items = await db

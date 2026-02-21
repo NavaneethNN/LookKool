@@ -18,7 +18,7 @@ import {
   storeSettings,
   inStoreBills,
 } from "@/db/schema";
-import { eq, desc, asc, sql, count, sum, and, gte, ilike, or, inArray, max } from "drizzle-orm";
+import { eq, desc, asc, sql, count, sum, and, gte, ilike, or, inArray, max, type AnyColumn } from "drizzle-orm";
 
 // ── Valid enum values (runtime validation whitelists) ────────
 const VALID_ORDER_STATUSES = ["Pending", "Processing", "Packed", "Shipped", "Delivered", "Cancelled", "Refunded"] as const;
@@ -356,7 +356,7 @@ export async function getAdminProducts(params?: {
   const sortField = params?.sort ?? "priority";
   const sortDir = params?.order ?? "asc";
   const orderClauses = [];
-  const sortMap: Record<string, any> = {
+  const sortMap: Record<string, AnyColumn> = {
     name: products.productName,
     price: products.basePrice,
     date: products.createdAt,

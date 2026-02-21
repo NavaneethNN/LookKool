@@ -50,7 +50,7 @@ interface Notification {
 export function CustomerNotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const loadNotifications = useCallback(() => {
     startTransition(async () => {

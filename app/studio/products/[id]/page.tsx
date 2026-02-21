@@ -5,7 +5,6 @@ import {
 } from "@/lib/actions/admin-actions";
 import { ProductForm } from "@/components/admin/product-form";
 import { VariantManager } from "@/components/admin/variant-manager";
-import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { ProductDetailActions } from "@/components/admin/product-detail-actions";
 import { notFound } from "next/navigation";

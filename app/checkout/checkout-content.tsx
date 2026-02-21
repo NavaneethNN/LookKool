@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import {
   MapPin,
   Plus,
@@ -91,7 +90,6 @@ export function CheckoutContent({
   brandColor?: string;
   deliveryConfig?: { freeAbove: number | null; standardCharge: number };
 }) {
-  const router = useRouter();
   const { items, total, savings, clearCart } = useCartStore();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -205,7 +203,6 @@ export function CheckoutContent({
       }
 
       const orderId = orderResult.orderId!;
-      const orderTotal = orderResult.totalAmount!;
 
       if (paymentMethod === "cod") {
         // COD — mark order and redirect

@@ -8,7 +8,6 @@ import {
 } from "@/db/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
 
 // ─── Helpers ──────────────────────────────────────────────────
 

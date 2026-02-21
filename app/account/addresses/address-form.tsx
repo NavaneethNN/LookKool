@@ -89,7 +89,7 @@ export function AddressForm({ address, onClose, onSaved }: AddressFormProps) {
       result = await addAddress(formData);
     }
 
-    if (result.error) {
+    if ("error" in result && result.error) {
       toast.error(result.error);
     } else {
       toast.success(isEdit ? "Address updated" : "Address added");

@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   useOrderNotifications,
-  type OrderNotification,
 } from "@/lib/hooks/use-order-notifications";
 import {
   DropdownMenu,

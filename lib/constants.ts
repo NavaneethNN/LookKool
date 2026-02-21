@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG } from "@/lib/site-config-shared";
 export const siteConfig = {
   name: DEFAULT_CONFIG.businessName,
   description: DEFAULT_CONFIG.siteDescription,
-  url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  url: process.env.NEXT_PUBLIC_APP_URL || "https://lookkool.vercel.app",
   logo: "/NewLogo.png",
   brandColor: DEFAULT_CONFIG.sitePrimaryColor,
 } as const;

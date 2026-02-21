@@ -20,7 +20,6 @@ import {
   MoreHorizontal,
   Copy,
   Trash2,
-  Eye,
   EyeOff,
   ExternalLink,
   Loader2,

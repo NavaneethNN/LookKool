@@ -14,15 +14,10 @@ import {
   Receipt,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   IndianRupee,
   Barcode,
   RotateCcw,
   ArrowLeftRight,
-  Percent,
-  CreditCard,
-  Split,
-  Eye,
   MonitorSmartphone,
 } from "lucide-react";
 import { isTauriApp, printBill, getPrinters } from "@/lib/tauri-print";
@@ -48,7 +43,6 @@ import {
   searchProductsForBilling,
   createInStoreBill,
   getInStoreBills,
-  getInStoreBill,
 } from "@/lib/actions/admin-actions";
 import {
   searchByBarcode,

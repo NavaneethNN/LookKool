@@ -14,7 +14,6 @@ import {
   Receipt,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   IndianRupee,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";

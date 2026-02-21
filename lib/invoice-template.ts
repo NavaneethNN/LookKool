@@ -228,8 +228,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     })
     .join("");
 
-  // Column count for table header
-  const colCount = 4 + (L.showHsn ? 1 : 0); // #, Item, (HSN), Qty, Rate, Amount => always has #, Item, Qty, Rate, Amount = 5, + HSN optional
+  // Column count: #, Item, (HSN), Qty, Rate, Amount
 
   if (thermal) return generateThermalHTML(data, paper, fs, accent);
 
@@ -457,7 +456,8 @@ function generateThermalHTML(
   data: InvoiceData,
   paper: (typeof PAPER_SIZES)[string],
   fs: number,
-  accent: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _accent: string,
 ): string {
   const S = data.store;
   const C = data.customer;

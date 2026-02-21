@@ -9,15 +9,11 @@ import {
   Trash2,
   Phone,
   Mail,
-  MapPin,
-  Building2,
-  X,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,

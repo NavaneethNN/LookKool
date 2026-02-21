@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useCallback } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   toggleProductActive,
   deleteProduct,
@@ -24,7 +24,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 import {
-  Plus,
   Search,
   MoreHorizontal,
   Edit,
@@ -99,7 +98,6 @@ export function ProductsList({
 }: ProductsListProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [searchInput, setSearchInput] = useState(currentFilters.search ?? "");

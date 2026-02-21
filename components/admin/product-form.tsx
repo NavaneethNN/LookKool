@@ -24,6 +24,7 @@ import {
 interface Category {
   categoryId: number;
   categoryName: string;
+  parentCategoryId?: number | null;
   parentCategory?: { categoryName: string } | null;
 }
 
@@ -141,16 +142,16 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   // Group categories for display
   const groupedCategories = useMemo(() => {
     const parents = categories.filter(
-      (c) => !(c as any).parentCategoryId
+      (c) => !c.parentCategoryId
     );
     const children = categories.filter(
-      (c) => (c as any).parentCategoryId
+      (c) => c.parentCategoryId
     );
     const result: { id: number; name: string; isChild?: boolean }[] = [];
     for (const p of parents) {
       result.push({ id: p.categoryId, name: p.categoryName });
       for (const c of children) {
-        if ((c as any).parentCategoryId === p.categoryId) {
+        if (c.parentCategoryId === p.categoryId) {
           result.push({
             id: c.categoryId,
             name: `  └ ${c.categoryName}`,

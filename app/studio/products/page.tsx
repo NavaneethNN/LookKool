@@ -54,7 +54,7 @@ export default async function ProductsPage({
       </PageHeader>
 
       <ProductsList
-        products={result.products as any}
+        products={result.products as never[]}
         categories={categories}
         total={result.total}
         page={result.page}

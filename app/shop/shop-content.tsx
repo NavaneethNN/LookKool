@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
 import { RecentlyViewed } from "@/components/product/recently-viewed";

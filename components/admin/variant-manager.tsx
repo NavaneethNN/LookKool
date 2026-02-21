@@ -190,7 +190,7 @@ export function VariantManager({ productId, variants }: VariantManagerProps) {
     }
     // Sort variants within each group by size
     for (const group of Array.from(map.values())) {
-      group.variants.sort((a: any, b: any) => sortSizes(a.size, b.size));
+      group.variants.sort((a: { size: string }, b: { size: string }) => sortSizes(a.size, b.size));
     }
     return Array.from(map.values());
   }, [variants]);
