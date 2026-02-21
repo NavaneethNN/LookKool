@@ -137,13 +137,11 @@ export default async function ProductPage({ params }: PageProps) {
 
   const colorVariants = Array.from(colorMap.values());
 
-  // Check auth for review form — use getSession() (no network call)
-  // since middleware already refreshed the session via getUser()
+  // Check auth for review form
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Fetch recommendations in parallel
   const [similarProducts, boughtTogether, trendingProducts, siteConfig] =

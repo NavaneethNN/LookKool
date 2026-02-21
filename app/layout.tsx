@@ -91,13 +91,9 @@ export default async function RootLayout({
     createClient(),
   ]);
 
-  // Use getSession() instead of getUser() — the middleware already called
-  // getUser() to refresh the session, so the cookie is fresh. getSession()
-  // reads from the cookie locally with zero network round-trip.
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Build dynamic CSS override for primary brand color
   const { h, s, l } = hexToHsl(siteConfig.sitePrimaryColor);
