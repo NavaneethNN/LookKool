@@ -1,10 +1,11 @@
 import { MetadataRoute } from "next";
-import { db } from "@/db";
-import { products, categories } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { getCachedProductSlugs, getCachedCategorySlugs } from "@/lib/cached-data";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
+
+// Revalidate sitemap every 60 minutes
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
@@ -47,12 +48,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Category pages
-  const allCategories = await db
-    .select({ slug: categories.slug, updatedAt: categories.updatedAt })
-    .from(categories)
-    .where(eq(categories.isActive, true));
-
+  // Category pages — cached query
+  const allCategories = await getCachedCategorySlugs();
   const categoryPages: MetadataRoute.Sitemap = allCategories.map((cat) => ({
     url: `${BASE_URL}/categories/${cat.slug}`,
     lastModified: cat.updatedAt,
@@ -60,12 +57,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Product pages
-  const allProducts = await db
-    .select({ slug: products.slug, updatedAt: products.updatedAt })
-    .from(products)
-    .where(eq(products.isActive, true));
-
+  // Product pages — cached query
+  const allProducts = await getCachedProductSlugs();
   const productPages: MetadataRoute.Sitemap = allProducts.map((prod) => ({
     url: `${BASE_URL}/products/${prod.slug}`,
     lastModified: prod.updatedAt,

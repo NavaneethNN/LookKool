@@ -15,7 +15,7 @@ import {
   storeSettings,
 } from "@/db/schema";
 import { eq, and, sql, asc, count } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { sendOrderConfirmation } from "@/lib/email/brevo";
 import { createNotification, notifyAdmins } from "@/lib/actions/notification-actions";
 import crypto from "crypto";
@@ -541,6 +541,7 @@ export async function createOrder(input: CreateOrderInput) {
   }
 
   revalidatePath("/account/orders");
+  revalidateTag("products");
 
   // ─── Send order confirmation email (non-blocking) ─────────
   try {

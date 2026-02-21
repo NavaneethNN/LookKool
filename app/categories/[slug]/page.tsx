@@ -5,14 +5,20 @@ import { categories, products, productVariants, productImages } from "@/db/schem
 import { eq, and, asc, desc, sql } from "drizzle-orm";
 import { ProductGrid } from "./product-grid";
 import { SlidersHorizontal } from "lucide-react";
-import { getPopularInCategory, getTrendingProducts } from "@/lib/actions/recommendation-actions";
 import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { TrendingUp, Star } from "lucide-react";
 import { getPublicSiteConfig } from "@/lib/site-config";
+import { getCachedPopularInCategory, getCachedTrending, getCachedCategorySlugs } from "@/lib/cached-data";
 
 // Revalidate category pages every 60 seconds
 export const revalidate = 60;
+
+// Pre-generate all active category pages at build time
+export async function generateStaticParams() {
+  const rows = await getCachedCategorySlugs();
+  return rows.map((row) => ({ slug: row.slug }));
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -276,8 +282,8 @@ async function CategoryRecommendations({
   productIds: number[];
 }) {
   const [popularInCat, trending] = await Promise.all([
-    getPopularInCategory(categoryId, productIds, 10),
-    getTrendingProducts(10),
+    getCachedPopularInCategory(categoryId, productIds, 10),
+    getCachedTrending(10),
   ]);
 
   // Deduplicate trending against already-shown products and popular-in-category

@@ -8,7 +8,7 @@ import {
 } from "@/db/schema";
 import { eq, and, asc, desc, sql, ilike, or } from "drizzle-orm";
 import { getPublicSiteConfig } from "@/lib/site-config";
-import { getTrendingProducts } from "@/lib/actions/recommendation-actions";
+import { getCachedTrending, getCachedCategoryList } from "@/lib/cached-data";
 import { ShopContent } from "./shop-content";
 
 export const revalidate = 60;
@@ -39,15 +39,7 @@ export default async function ShopAllPage({ searchParams }: PageProps) {
   } = await searchParams;
 
   // ── Fetch active categories for filter chips ─────────────────
-  const allCategories = await db
-    .select({
-      categoryId: categories.categoryId,
-      categoryName: categories.categoryName,
-      slug: categories.slug,
-    })
-    .from(categories)
-    .where(eq(categories.isActive, true))
-    .orderBy(categories.sortOrder);
+  const allCategories = await getCachedCategoryList();
 
   // ── Build where conditions ───────────────────────────────────
   const conditions: ReturnType<typeof eq>[] = [eq(products.isActive, true)];
@@ -171,7 +163,7 @@ export default async function ShopAllPage({ searchParams }: PageProps) {
 
   // ── Trending (shown when few results) ────────────────────────
   const trending =
-    items.length < 4 ? await getTrendingProducts(10) : [];
+    items.length < 4 ? await getCachedTrending(10) : [];
 
   const siteConfig = await getPublicSiteConfig();
 

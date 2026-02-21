@@ -9,20 +9,29 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { submitReview } from "@/lib/actions/review-actions";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 interface ReviewFormProps {
   productId: number;
   slug: string;
-  isAuthenticated: boolean;
 }
 
-export function ReviewForm({ productId, slug, isAuthenticated }: ReviewFormProps) {
+export function ReviewForm({ productId, slug }: ReviewFormProps) {
+  const { user, loading } = useAuth();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  if (!isAuthenticated) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border bg-muted/30 p-4 text-center animate-pulse">
+        <div className="h-4 w-40 mx-auto rounded bg-muted" />
+      </div>
+    );
+  }
+
+  if (!user) {
     return (
       <div className="rounded-lg border bg-muted/30 p-4 text-center">
         <p className="text-sm text-muted-foreground">

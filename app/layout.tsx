@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { createClient } from "@/lib/supabase/server";
 import { getPublicSiteConfig, hexToHsl } from "@/lib/site-config";
 import { cache } from "react";
 import "./globals.css";
@@ -86,14 +85,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [siteConfig, supabase] = await Promise.all([
-    getCachedSiteConfig(),
-    createClient(),
-  ]);
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const siteConfig = await getCachedSiteConfig();
 
   // Build dynamic CSS override for primary brand color
   const { h, s, l } = hexToHsl(siteConfig.sitePrimaryColor);
@@ -111,7 +103,6 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
         <Navbar
-          user={user ? { id: user.id, email: user.email } : null}
           siteConfig={siteConfig}
         />
         <main className="flex-1">{children}</main>

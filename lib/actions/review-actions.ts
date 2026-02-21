@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/db";
 import { reviews, orderItems, orders } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 // ─── Constants ─────────────────────────────────────────────────
 
@@ -106,5 +106,6 @@ export async function submitReview(formData: FormData) {
   });
 
   revalidatePath(`/products/${slug}`);
+  revalidateTag("products");
   return { success: true };
 }

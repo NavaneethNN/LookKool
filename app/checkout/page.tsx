@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CheckoutContent } from "./checkout-content";
 import { getPublicSiteConfig } from "@/lib/site-config";
-import { getPublicDeliveryConfig } from "@/lib/actions/checkout-actions";
+import { getCachedDeliveryConfig } from "@/lib/cached-data";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function CheckoutPage() {
   const [siteConfig, deliveryConfig] = await Promise.all([
     getPublicSiteConfig(),
-    getPublicDeliveryConfig(),
+    getCachedDeliveryConfig(),
   ]);
 
   return (

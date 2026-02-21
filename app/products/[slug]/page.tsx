@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import {
-  products,
   productVariants,
   productImages,
   reviews,
@@ -11,20 +10,28 @@ import {
 import { eq, and, desc, avg, count } from "drizzle-orm";
 import { ProductDetail } from "./product-detail";
 import { ProductJsonLd } from "@/components/seo/product-jsonld";
-import { createClient } from "@/lib/supabase/server";
-import {
-  getSimilarProducts,
-  getFrequentlyBoughtTogether,
-  getTrendingProducts,
-} from "@/lib/actions/recommendation-actions";
 import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { TrackProductView } from "@/components/product/track-product-view";
 import { Sparkles, ShoppingBag, TrendingUp } from "lucide-react";
 import { getPublicSiteConfig } from "@/lib/site-config";
+import {
+  getProductBySlug,
+  getProductMetaBySlug,
+  getCachedSimilar,
+  getCachedFrequentlyBought,
+  getCachedTrending,
+  getCachedProductSlugs,
+} from "@/lib/cached-data";
 
 // Revalidate product pages every 60 seconds
 export const revalidate = 60;
+
+// Pre-generate all active product pages at build time
+export async function generateStaticParams() {
+  const rows = await getCachedProductSlugs();
+  return rows.map((row) => ({ slug: row.slug }));
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -33,7 +40,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const [product, siteConfig] = await Promise.all([
-    db.query.products.findFirst({ where: eq(products.slug, slug) }),
+    getProductMetaBySlug(slug),
     getPublicSiteConfig(),
   ]);
   if (!product) return { title: "Product Not Found" };
@@ -47,10 +54,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params;
 
-  // Fetch product
-  const product = await db.query.products.findFirst({
-    where: and(eq(products.slug, slug), eq(products.isActive, true)),
-  });
+  // Fetch product — deduplicated with generateMetadata via React cache()
+  const product = await getProductBySlug(slug);
 
   if (!product) notFound();
 
@@ -137,23 +142,17 @@ export default async function ProductPage({ params }: PageProps) {
 
   const colorVariants = Array.from(colorMap.values());
 
-  // Check auth for review form
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   // Fetch recommendations in parallel (non-critical — never crash the page)
-  let similarProducts: Awaited<ReturnType<typeof getSimilarProducts>> = [];
-  let boughtTogether: Awaited<ReturnType<typeof getFrequentlyBoughtTogether>> = [];
-  let trendingProducts: Awaited<ReturnType<typeof getTrendingProducts>> = [];
+  let similarProducts: Awaited<ReturnType<typeof getCachedSimilar>> = [];
+  let boughtTogether: Awaited<ReturnType<typeof getCachedFrequentlyBought>> = [];
+  let trendingProducts: Awaited<ReturnType<typeof getCachedTrending>> = [];
   let siteConfig: Awaited<ReturnType<typeof getPublicSiteConfig>>;
 
   try {
     const [sim, bought, trending, config] = await Promise.all([
-      getSimilarProducts(product.productId, product.categoryId, 8).catch(() => []),
-      getFrequentlyBoughtTogether([product.productId], 6).catch(() => []),
-      getTrendingProducts(8).catch(() => []),
+      getCachedSimilar(product.productId, product.categoryId, 8).catch(() => []),
+      getCachedFrequentlyBought([product.productId], 6).catch(() => []),
+      getCachedTrending(8).catch(() => []),
       getPublicSiteConfig(),
     ]);
     similarProducts = sim;
@@ -250,7 +249,6 @@ export default async function ProductPage({ params }: PageProps) {
           isVerified: r.isVerified,
           createdAt: r.createdAt.toISOString(),
         }))}
-        isAuthenticated={!!user}
       />
 
       {/* ── Recommendation Sections ───────────────────────── */}

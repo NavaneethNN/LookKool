@@ -75,7 +75,6 @@ interface ProductDetailProps {
     totalReviews: number;
   };
   recentReviews: Review[];
-  isAuthenticated: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────
@@ -85,7 +84,6 @@ export function ProductDetail({
   colorVariants,
   reviewSummary,
   recentReviews,
-  isAuthenticated,
 }: ProductDetailProps) {
   const addToCart = useCartStore((s) => s.addItem);
   const { toggleItem, isWishlisted } = useWishlistStore();
@@ -581,7 +579,6 @@ export function ProductDetail({
             <ReviewForm
               productId={product.productId}
               slug={product.slug}
-              isAuthenticated={isAuthenticated}
             />
           </TabsContent>
         </Tabs>

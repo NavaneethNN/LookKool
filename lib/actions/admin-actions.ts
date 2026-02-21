@@ -29,7 +29,7 @@ const VALID_RETURN_STATUSES = ["Pending", "Approved", "Rejected", "Refunded"] as
 function escapeIlike(str: string): string {
   return str.replace(/[%_\\]/g, (ch) => "\\" + ch);
 }
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin, requireAdminOrCashier } from "@/lib/admin/require-admin";
 import { sendShippingUpdate, sendReturnStatusEmail } from "@/lib/email/brevo";
 import { createNotification } from "@/lib/actions/notification-actions";
@@ -457,6 +457,7 @@ export async function createProduct(data: {
     .returning();
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return newProduct;
 }
 
@@ -491,6 +492,7 @@ export async function updateProduct(
     .where(eq(products.productId, productId));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   revalidatePath(`/studio/products/${productId}`);
   return { success: true };
 }
@@ -510,6 +512,7 @@ export async function deleteProduct(productId: number) {
   await db.delete(products).where(eq(products.productId, productId));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true };
 }
 
@@ -522,6 +525,7 @@ export async function toggleProductActive(productId: number, isActive: boolean) 
     .where(eq(products.productId, productId));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true };
 }
 
@@ -580,6 +584,7 @@ export async function bulkUpdateStock(
   }
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true, updated: updates.length };
 }
 
@@ -638,6 +643,7 @@ export async function updateVariant(
     .where(eq(productVariants.variantId, variantId));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true };
 }
 
@@ -656,6 +662,7 @@ export async function deleteVariant(variantId: number) {
   await db.delete(productVariants).where(eq(productVariants.variantId, variantId));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true };
 }
 
@@ -683,6 +690,7 @@ export async function bulkDeleteVariants(variantIds: number[]) {
   await db.delete(productVariants).where(inArray(productVariants.variantId, variantIds));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true, deleted: variantIds.length };
 }
 
@@ -695,6 +703,7 @@ export async function updateStock(variantId: number, stockCount: number) {
     .where(eq(productVariants.variantId, variantId));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true };
 }
 
@@ -735,6 +744,7 @@ export async function addVariantImage(
     .returning();
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return img;
 }
 
@@ -744,6 +754,7 @@ export async function removeVariantImage(imageId: number) {
   await db.delete(productImages).where(eq(productImages.imageId, imageId));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true };
 }
 
@@ -774,6 +785,7 @@ export async function setVariantPrimaryImage(
     .where(eq(productImages.imageId, imageId));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true };
 }
 
@@ -798,6 +810,7 @@ export async function bulkDeleteProducts(productIds: number[]) {
   await db.delete(products).where(inArray(products.productId, productIds));
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true, deleted: productIds.length };
 }
 
@@ -817,6 +830,7 @@ export async function bulkToggleProductsActive(
   }
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true, updated: productIds.length };
 }
 
@@ -834,6 +848,7 @@ export async function bulkUpdateProductCategory(
   }
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return { success: true, updated: productIds.length };
 }
 
@@ -903,6 +918,7 @@ export async function duplicateProduct(productId: number) {
   }
 
   revalidatePath("/studio/products");
+    revalidateTag("products");
   return newProduct;
 }
 
@@ -1022,6 +1038,7 @@ export async function createCategory(data: {
     .returning();
 
   revalidatePath("/studio/categories");
+  revalidateTag("categories");
   return cat;
 }
 
@@ -1045,6 +1062,7 @@ export async function updateCategory(
     .where(eq(categories.categoryId, categoryId));
 
   revalidatePath("/studio/categories");
+  revalidateTag("categories");
   return { success: true };
 }
 
@@ -1072,6 +1090,7 @@ export async function deleteCategory(categoryId: number) {
   await db.delete(categories).where(eq(categories.categoryId, categoryId));
 
   revalidatePath("/studio/categories");
+  revalidateTag("categories");
   return { success: true };
 }
 
@@ -1223,6 +1242,7 @@ export async function toggleReviewApproval(reviewId: number, isApproved: boolean
     .where(eq(reviews.reviewId, reviewId));
 
   revalidatePath("/studio/reviews");
+  revalidateTag("products");
   return { success: true };
 }
 
@@ -1232,6 +1252,7 @@ export async function deleteReview(reviewId: number) {
   await db.delete(reviews).where(eq(reviews.reviewId, reviewId));
 
   revalidatePath("/studio/reviews");
+  revalidateTag("products");
   return { success: true };
 }
 
@@ -1573,6 +1594,7 @@ export async function upsertDeliverySetting(data: {
   }
 
   revalidatePath("/studio/settings");
+  revalidateTag("delivery-config");
   return { success: true };
 }
 
@@ -1682,7 +1704,6 @@ export async function upsertStoreSettings(data: {
 
   revalidatePath("/studio/settings");
   // Bust cached site config so storefront picks up changes immediately
-  const { revalidateTag } = await import("next/cache");
   revalidateTag("site-config");
   return { success: true };
 }
@@ -1736,7 +1757,6 @@ export async function savePolicySettings(data: {
   }
 
   revalidatePath("/studio/settings");
-  const { revalidateTag } = await import("next/cache");
   revalidateTag("site-config");
   return { success: true };
 }
@@ -1999,7 +2019,6 @@ export async function upsertSiteAppearance(data: {
   // Revalidate storefront and admin settings
   revalidatePath("/", "layout");
   revalidatePath("/studio/settings");
-  const { revalidateTag } = await import("next/cache");
   revalidateTag("site-config");
   return { success: true };
 }

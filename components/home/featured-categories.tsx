@@ -1,16 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { db } from "@/db";
 import { categories } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { getCachedCategories } from "@/lib/cached-data";
 
 export async function FeaturedCategories() {
-  const dbCategories = await db.query.categories.findMany({
-    where: eq(categories.isActive, true),
-    orderBy: categories.sortOrder,
-    limit: 8,
-  });
+  const dbCategories = await getCachedCategories();
 
   return (
     <section className="container mx-auto px-4 py-14 sm:py-20">

@@ -11,19 +11,20 @@ import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { useWishlistStore } from "@/lib/stores/wishlist-store";
 import { CustomerNotificationBell } from "@/components/layout/customer-notification-bell";
+import { useAuth } from "@/lib/hooks/use-auth";
 import type { PublicSiteConfig } from "@/lib/site-config";
 
 interface NavbarProps {
-  user: { id: string; email?: string } | null;
   siteConfig: PublicSiteConfig;
 }
 
-export function Navbar({ user, siteConfig }: NavbarProps) {
+export function Navbar({ siteConfig }: NavbarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const cartCount = useCartStore((s) => s.itemCount());
   const wishlistCount = useWishlistStore((s) => s.items.length);
   const [mounted, setMounted] = useState(false);
+  const { user } = useAuth();
   useEffect(() => setMounted(true), []);
 
   const logoSrc = siteConfig.siteLogoUrl || "/NewLogo.png";
@@ -104,7 +105,7 @@ export function Navbar({ user, siteConfig }: NavbarProps) {
               )}
             </Link>
           </Button>
-          {user ? (
+          {mounted && user ? (
             <>
               <CustomerNotificationBell />
               <Button variant="ghost" size="icon" asChild>
@@ -113,10 +114,12 @@ export function Navbar({ user, siteConfig }: NavbarProps) {
                 </Link>
               </Button>
             </>
-          ) : (
+          ) : mounted ? (
             <Button asChild size="sm">
               <Link href="/sign-in">Sign In</Link>
             </Button>
+          ) : (
+            <div className="w-[70px]" />
           )}
         </div>
 

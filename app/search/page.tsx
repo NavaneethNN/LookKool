@@ -1,10 +1,10 @@
 import { Metadata } from "next";
 import { db } from "@/db";
-import { products, productVariants, productImages, categories } from "@/db/schema";
+import { products, productVariants, productImages } from "@/db/schema";
 import { eq, and, or, ilike, sql, desc } from "drizzle-orm";
 import { SearchContent } from "./search-content";
-import { getTrendingProducts, getPopularProducts } from "@/lib/actions/recommendation-actions";
 import { getPublicSiteConfig } from "@/lib/site-config";
+import { getCachedTrending, getCachedPopular, getCachedCategoryList } from "@/lib/cached-data";
 
 // Disable caching for search (depends on query params)
 export const dynamic = "force-dynamic";
@@ -25,15 +25,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const { q = "", category } = await searchParams;
 
   // Fetch all active categories for filter
-  const allCategories = await db
-    .select({
-      categoryId: categories.categoryId,
-      categoryName: categories.categoryName,
-      slug: categories.slug,
-    })
-    .from(categories)
-    .where(eq(categories.isActive, true))
-    .orderBy(categories.sortOrder);
+  const allCategories = await getCachedCategoryList();
 
   let productList: {
     productId: number;
@@ -125,7 +117,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
   // Fetch recommendations when no query or no results
   const needsRecs = !q.trim() || productList.length === 0;
   const [trendingProducts, popularProducts] = needsRecs
-    ? await Promise.all([getTrendingProducts(10), getPopularProducts(10)])
+    ? await Promise.all([getCachedTrending(10), getCachedPopular(10)])
     : [[], []];
 
   // Deduplicate popular against trending

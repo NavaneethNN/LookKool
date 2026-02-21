@@ -1,18 +1,18 @@
 import {
-  getTrendingProducts,
-  getNewArrivals,
-  getTopRatedProducts,
-  getBiggestDeals,
-} from "@/lib/actions/recommendation-actions";
+  getCachedTrending,
+  getCachedNewArrivals,
+  getCachedTopRated,
+  getCachedBiggestDeals,
+} from "@/lib/cached-data";
 import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
 import { TrendingUp, Sparkles, Star, Percent } from "lucide-react";
 
 export async function HomeRecommendations() {
   const [trending, newArrivals, topRated, deals] = await Promise.all([
-    getTrendingProducts(8),
-    getNewArrivals(8),
-    getTopRatedProducts(8),
-    getBiggestDeals(8),
+    getCachedTrending(8),
+    getCachedNewArrivals(8),
+    getCachedTopRated(8),
+    getCachedBiggestDeals(8),
   ]);
 
   // Deduplicate — if trending and new arrivals overlap, filter out dupes

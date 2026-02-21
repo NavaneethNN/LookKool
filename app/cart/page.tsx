@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { CartContent } from "./cart-content";
 import dynamic from "next/dynamic";
-import { getPublicDeliveryConfig } from "@/lib/actions/checkout-actions";
+import { getCachedDeliveryConfig } from "@/lib/cached-data";
 import { getPublicSiteConfig } from "@/lib/site-config";
 
 const CartRecommendations = dynamic(
@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CartPage() {
-  const deliveryConfig = await getPublicDeliveryConfig();
+  const deliveryConfig = await getCachedDeliveryConfig();
 
   return (
     <main className="container mx-auto px-4 py-8">
