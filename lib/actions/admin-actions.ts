@@ -991,12 +991,25 @@ export async function getLowStockProducts(threshold: number = 5) {
 export async function getAdminCategories() {
   await requireAdmin();
 
-  return db.query.categories.findMany({
+  const rows = await db.query.categories.findMany({
     orderBy: [asc(categories.sortOrder), asc(categories.categoryName)],
     with: {
       parent: { columns: { categoryName: true } },
     },
   });
+
+  // Strip Date fields before returning to Server Component → Client Component boundary
+  return rows.map((cat) => ({
+    categoryId: cat.categoryId,
+    categoryName: cat.categoryName,
+    slug: cat.slug,
+    description: cat.description,
+    imageUrl: cat.imageUrl,
+    parentCategoryId: cat.parentCategoryId,
+    isActive: cat.isActive,
+    sortOrder: cat.sortOrder,
+    parent: cat.parent ? { categoryName: cat.parent.categoryName } : null,
+  }));
 }
 
 /** Lightweight list of active categories (for dropdowns / selectors). */
