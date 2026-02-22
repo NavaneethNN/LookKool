@@ -102,6 +102,7 @@ export function CategoryActions({
       try {
         await deleteCategory(editCategory.categoryId);
         toast.success("Category deleted");
+        router.refresh();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to delete category");
       }
@@ -109,34 +110,36 @@ export function CategoryActions({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {isEdit ? (
-          <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1">
+      {isEdit && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete();
+          }}
+          disabled={isPending}
+          className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors disabled:opacity-50"
+          title="Delete"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {isEdit ? (
             <button
               className="p-1.5 text-gray-400 hover:text-primary rounded transition-colors"
               title="Edit"
             >
               <Pencil className="w-4 h-4" />
             </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
-              }}
-              className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"
-              title="Delete"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <Button size="sm" className="bg-primary hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-1" />
-            Add Category
-          </Button>
-        )}
-      </DialogTrigger>
+          ) : (
+            <Button size="sm" className="bg-primary hover:bg-primary/90">
+              <Plus className="w-4 h-4 mr-1" />
+              Add Category
+            </Button>
+          )}
+        </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -263,6 +266,7 @@ export function CategoryActions({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </div>
   );
 }
