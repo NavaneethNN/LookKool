@@ -45,7 +45,7 @@ export function ReturnResolve({
   if (!options || options.length === 0) {
     return (
       <span className="text-xs text-gray-400 italic">
-        {currentStatus === "refunded" ? "Resolved" : "—"}
+        {currentStatus === "Refunded" ? "Resolved" : "—"}
       </span>
     );
   }

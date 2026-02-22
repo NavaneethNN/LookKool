@@ -150,7 +150,7 @@ export default async function OrdersPage({
             <div className="flex gap-2">
               {page > 1 && (
                 <Link
-                  href={`/studio/orders?status=${status}&page=${page - 1}`}
+                  href={`/studio/orders?${status !== "all" ? `status=${status}&` : ""}page=${page - 1}`}
                   className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-100"
                 >
                   Previous
@@ -158,7 +158,7 @@ export default async function OrdersPage({
               )}
               {page < totalPages && (
                 <Link
-                  href={`/studio/orders?status=${status}&page=${page + 1}`}
+                  href={`/studio/orders?${status !== "all" ? `status=${status}&` : ""}page=${page + 1}`}
                   className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-100"
                 >
                   Next

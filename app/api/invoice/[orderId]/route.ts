@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     // Authenticate: must be admin or cashier
@@ -26,7 +26,8 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const orderId = Number(params.orderId);
+    const { orderId: orderIdParam } = await params;
+    const orderId = Number(orderIdParam);
     if (isNaN(orderId) || orderId < 1) {
       return NextResponse.json({ error: "Invalid order ID" }, { status: 400 });
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   updateOrderStatus,
   updatePaymentStatus,
@@ -35,6 +36,7 @@ interface OrderActionsProps {
 }
 
 export function OrderActions({ order }: OrderActionsProps) {
+  const router = useRouter();
   const [status, setStatus] = useState(order.status);
   const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus);
   const [tracking, setTracking] = useState(order.trackingNumber ?? "");
@@ -46,6 +48,7 @@ export function OrderActions({ order }: OrderActionsProps) {
     try {
       await updateOrderStatus(order.orderId, status);
       toast.success("Order status updated");
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update order status");
     }
@@ -57,6 +60,7 @@ export function OrderActions({ order }: OrderActionsProps) {
     try {
       await updatePaymentStatus(order.orderId, paymentStatus);
       toast.success("Payment status updated");
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update payment status");
     }
@@ -68,6 +72,7 @@ export function OrderActions({ order }: OrderActionsProps) {
     try {
       await updateTrackingNumber(order.orderId, tracking);
       toast.success("Tracking number updated");
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update tracking number");
     }
@@ -79,6 +84,7 @@ export function OrderActions({ order }: OrderActionsProps) {
     try {
       await updateOrderNotes(order.orderId, notes);
       toast.success("Notes updated");
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update notes");
     }
