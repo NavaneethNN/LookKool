@@ -11,32 +11,48 @@ const MAX_PASSWORD_LENGTH = 128;
 const MAX_NAME_LENGTH = 150;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// ─── Email / Password ────────────────────────────────────────
+// ─── Result type for client-friendly actions ─────────────────
 
-export async function signUp(formData: FormData) {
-  const supabase = await createClient();
+type AuthResult = {
+  success: boolean;
+  error?: string;
+  message?: string;
+};
 
-  const email = (formData.get("email") as string)?.trim();
-  const password = formData.get("password") as string;
-  const fullName = (formData.get("fullName") as string)?.trim();
+// ─── Client-friendly actions (return results, no redirect) ───
+
+/**
+ * Sign up — returns a result object so the client can show
+ * loading states, success screens, and inline errors.
+ */
+export async function signUpAction(data: {
+  email: string;
+  password: string;
+  fullName: string;
+}): Promise<AuthResult> {
+  const { email, password, fullName } = data;
 
   // ─── Input validation ─────────────────────────────────────
   if (!email || !password || !fullName) {
-    return redirect(`/sign-up?error=${encodeURIComponent("All fields are required")}`);
+    return { success: false, error: "All fields are required" };
   }
   if (email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(email)) {
-    return redirect(`/sign-up?error=${encodeURIComponent("Please enter a valid email address")}`);
+    return { success: false, error: "Please enter a valid email address" };
   }
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return redirect(`/sign-up?error=${encodeURIComponent(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`)}`);
+    return {
+      success: false,
+      error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+    };
   }
   if (password.length > MAX_PASSWORD_LENGTH) {
-    return redirect(`/sign-up?error=${encodeURIComponent("Password is too long")}`);
+    return { success: false, error: "Password is too long" };
   }
   if (fullName.length < 2 || fullName.length > MAX_NAME_LENGTH) {
-    return redirect(`/sign-up?error=${encodeURIComponent("Name must be 2–150 characters")}`);
+    return { success: false, error: "Name must be 2–150 characters" };
   }
 
+  const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -46,33 +62,73 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    // Sanitize error message — don't leak internals
     const safeMessage = error.message.includes("already registered")
       ? "An account with this email already exists"
       : "Sign up failed. Please try again.";
-    return redirect(`/sign-up?error=${encodeURIComponent(safeMessage)}`);
+    return { success: false, error: safeMessage };
   }
 
-  return redirect("/sign-up?message=Check your email to confirm your account");
+  return {
+    success: true,
+    message: "Check your email to confirm your account",
+  };
 }
 
-export async function signIn(formData: FormData) {
-  const supabase = await createClient();
-
-  const email = (formData.get("email") as string)?.trim();
-  const password = formData.get("password") as string;
+/**
+ * Sign in — returns a result object for client-side handling.
+ * On success the client should call router.push("/") or router.refresh().
+ */
+export async function signInAction(data: {
+  email: string;
+  password: string;
+}): Promise<AuthResult> {
+  const { email, password } = data;
 
   if (!email || !password) {
-    return redirect(`/sign-in?error=${encodeURIComponent("Email and password are required")}`);
+    return { success: false, error: "Email and password are required" };
   }
 
+  const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    // Generic error to prevent user enumeration
-    return redirect(`/sign-in?error=${encodeURIComponent("Invalid email or password")}`);
+    return { success: false, error: "Invalid email or password" };
   }
 
+  return { success: true };
+}
+
+// ─── Legacy form-action based (kept for backward compat) ─────
+
+export async function signUp(formData: FormData) {
+  const email = (formData.get("email") as string)?.trim();
+  const password = formData.get("password") as string;
+  const fullName = (formData.get("fullName") as string)?.trim();
+
+  const result = await signUpAction({
+    email: email || "",
+    password: password || "",
+    fullName: fullName || "",
+  });
+
+  if (!result.success) {
+    return redirect(`/sign-up?error=${encodeURIComponent(result.error!)}`);
+  }
+  return redirect(`/sign-up?message=${encodeURIComponent(result.message!)}`);
+}
+
+export async function signIn(formData: FormData) {
+  const email = (formData.get("email") as string)?.trim();
+  const password = formData.get("password") as string;
+
+  const result = await signInAction({
+    email: email || "",
+    password: password || "",
+  });
+
+  if (!result.success) {
+    return redirect(`/sign-in?error=${encodeURIComponent(result.error!)}`);
+  }
   return redirect("/");
 }
 
@@ -86,8 +142,8 @@ export async function signOut() {
 
 export async function signInWithGoogle() {
   const supabase = await createClient();
-  // Use environment variable for origin — NEVER trust request headers
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL || "https://lookkoolladiesworld.com";
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -101,7 +157,6 @@ export async function signInWithGoogle() {
   });
 
   if (error) {
-    // Common: Google provider not enabled in Supabase dashboard
     if (error.message.includes("provider")) {
       return redirect(
         `/sign-in?error=${encodeURIComponent(
@@ -109,7 +164,9 @@ export async function signInWithGoogle() {
         )}`
       );
     }
-    return redirect(`/sign-in?error=${encodeURIComponent("Sign-in failed. Please try again.")}`);
+    return redirect(
+      `/sign-in?error=${encodeURIComponent("Sign-in failed. Please try again.")}`
+    );
   }
 
   return redirect(data.url);
