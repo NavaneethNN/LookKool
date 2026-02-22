@@ -48,6 +48,7 @@ import {
 interface ProductVariant {
   variantId: number;
   color: string;
+  hexcode: string | null;
   size: string;
   stockCount: number;
   images: { imagePath: string }[];
@@ -709,7 +710,7 @@ export function ProductsList({
                                 const hex =
                                   product.variants.find(
                                     (v) => v.color === color
-                                  )?.color ?? "#ccc";
+                                  )?.hexcode ?? "#ccc";
                                 return (
                                   <div
                                     key={i}

@@ -377,7 +377,7 @@ export async function getAdminProducts(params?: {
     with: {
       category: { columns: { categoryName: true } },
       variants: {
-        columns: { variantId: true, color: true, size: true, stockCount: true },
+        columns: { variantId: true, color: true, hexcode: true, size: true, stockCount: true },
         with: {
           images: {
             where: eq(productImages.isPrimary, true),
@@ -456,11 +456,11 @@ export async function createProduct(data: {
       isActive: data.isActive ?? true,
       priority: data.priority ?? 99,
     })
-    .returning();
+    .returning({ productId: products.productId });
 
   revalidatePath("/studio/products");
     revalidateTag("products");
-  return newProduct;
+  return { productId: newProduct.productId };
 }
 
 export async function updateProduct(
@@ -605,7 +605,7 @@ export async function createVariant(data: {
 }) {
   await requireAdmin();
 
-  const [variant] = await db
+  await db
     .insert(productVariants)
     .values({
       productId: data.productId,
@@ -617,11 +617,10 @@ export async function createVariant(data: {
       priceModifier: data.priceModifier || "0.00",
       price: data.price || null,
       mrp: data.mrp || null,
-    })
-    .returning();
+    });
 
   revalidatePath(`/studio/products/${data.productId}`);
-  return variant;
+  return { success: true };
 }
 
 export async function updateVariant(
@@ -734,7 +733,7 @@ export async function addVariantImage(
     .where(eq(productImages.variantId, variantId));
   const nextSort = (maxSort?.maxOrder ?? -1) + 1;
 
-  const [img] = await db
+  await db
     .insert(productImages)
     .values({
       variantId,
@@ -742,12 +741,11 @@ export async function addVariantImage(
       isPrimary,
       altText: altText || null,
       sortOrder: nextSort,
-    })
-    .returning();
+    });
 
   revalidatePath("/studio/products");
     revalidateTag("products");
-  return img;
+  return { success: true };
 }
 
 export async function removeVariantImage(imageId: number) {
@@ -888,7 +886,7 @@ export async function duplicateProduct(productId: number) {
       isActive: false, // Start as inactive
       priority: original.priority,
     })
-    .returning();
+    .returning({ productId: products.productId });
 
   // Duplicate variants and their images
   for (const variant of original.variants) {
@@ -905,7 +903,7 @@ export async function duplicateProduct(productId: number) {
         price: variant.price,
         mrp: variant.mrp,
       })
-      .returning();
+      .returning({ variantId: productVariants.variantId });
 
     // Duplicate images (reuse same image paths)
     for (const img of variant.images) {
@@ -921,7 +919,7 @@ export async function duplicateProduct(productId: number) {
 
   revalidatePath("/studio/products");
     revalidateTag("products");
-  return newProduct;
+  return { productId: newProduct.productId };
 }
 
 export async function getProductStockSummary(productId: number) {
