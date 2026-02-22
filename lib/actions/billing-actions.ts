@@ -103,7 +103,7 @@ export async function createSupplier(data: {
   }).returning();
 
   revalidatePath("/studio/suppliers");
-  return supplier;
+  return { supplierId: supplier.supplierId, name: supplier.name };
 }
 
 export async function updateSupplier(supplierId: number, data: {
@@ -279,7 +279,7 @@ export async function createPurchaseOrder(data: {
   }
 
   revalidatePath("/studio/purchases");
-  return po;
+  return { purchaseOrderId: po.purchaseOrderId, poNumber: po.poNumber };
 }
 
 export async function receivePurchaseOrder(purchaseOrderId: number, receivedItems: Array<{ poItemId: number; receivedQty: number }>) {
@@ -665,7 +665,7 @@ export async function createBillReturn(data: {
   }
 
   revalidatePath("/studio/billing");
-  return billReturn;
+  return { billReturnId: billReturn.billReturnId, success: true };
 }
 
 export async function getBillReturns(billId?: number) {

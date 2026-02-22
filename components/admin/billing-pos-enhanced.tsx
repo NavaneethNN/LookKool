@@ -59,6 +59,8 @@ type Variant = {
   stockCount: number;
   sku: string | null;
   priceModifier: string | null;
+  price: string | null;
+  mrp: string | null;
 };
 
 type SearchProduct = {
@@ -330,8 +332,8 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
   // ─── Add to cart ──────────────────────────────────
   const addToCart = (product: SearchProduct, variant: Variant) => {
     const key = `${product.productId}-${variant.variantId}`;
-    const price = Number(product.basePrice) + (Number(variant.priceModifier) || 0);
-    const mrp = Number(product.mrp) + (Number(variant.priceModifier) || 0);
+    const price = Number(variant.price || product.basePrice) + (Number(variant.priceModifier) || 0);
+    const mrp = Number(variant.mrp || product.mrp) + (Number(variant.priceModifier) || 0);
 
     setCart((prev) => {
       const existing = prev.find((c) => c.id === key);
@@ -402,7 +404,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
 
   const updateItemDiscount = (id: string, discountVal: number) => {
     setCart((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, itemDiscount: Math.max(0, discountVal) } : c))
+      prev.map((c) => (c.id === id ? { ...c, itemDiscount: Math.min(c.price, Math.max(0, discountVal)) } : c))
     );
   };
 
@@ -455,11 +457,12 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
   const totalItemDiscount = cart.reduce((sum, c) => sum + c.itemDiscount * c.quantity, 0);
   const afterItemDiscount = subtotal - totalItemDiscount;
 
-  const billDiscountAmt = discountType === "percent"
-    ? afterItemDiscount * (Number(discount) || 0) / 100
+  const rawBillDiscount = discountType === "percent"
+    ? afterItemDiscount * Math.min(Number(discount) || 0, 100) / 100
     : Number(discount) || 0;
+  const billDiscountAmt = Math.min(rawBillDiscount, afterItemDiscount); // Cap: can't exceed subtotal
   const totalDiscountAmt = totalItemDiscount + billDiscountAmt;
-  const afterDiscount = afterItemDiscount - billDiscountAmt;
+  const afterDiscount = Math.max(0, afterItemDiscount - billDiscountAmt);
 
   const taxableAmount = enableGst
     ? (afterDiscount * 100) / (100 + gstRate)
@@ -595,6 +598,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
           variant: string;
           quantity: number;
           rate: number;
+          itemDiscount?: number;
         }>;
         setReturnBillItems(items.map(i => ({
           variantId: i.variantId || 0,
@@ -602,7 +606,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
           variant: i.variant,
           quantity: i.quantity,
           maxQty: i.quantity,
-          rate: i.rate,
+          rate: i.rate - (i.itemDiscount || 0), // effective rate after item discount
           selected: false,
           returnQty: 0,
         })));
@@ -1112,7 +1116,7 @@ export function BillingPOS({ storeConfig }: { storeConfig: StoreConfig }) {
           {selectedProduct && (
             <div className="grid gap-2 max-h-80 overflow-y-auto">
               {selectedProduct.variants.map((variant) => {
-                const price = Number(selectedProduct.basePrice) + (Number(variant.priceModifier) || 0);
+                const price = Number(variant.price || selectedProduct.basePrice) + (Number(variant.priceModifier) || 0);
                 const outOfStock = variant.stockCount <= 0;
                 return (
                   <button key={variant.variantId} onClick={() => addToCart(selectedProduct, variant)} disabled={outOfStock}

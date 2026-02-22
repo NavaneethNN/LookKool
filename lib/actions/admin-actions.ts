@@ -19,6 +19,7 @@ import {
   deliverySettings,
   storeSettings,
   inStoreBills,
+  stockAdjustments,
 } from "@/db/schema";
 import { eq, desc, asc, sql, count, sum, and, gte, ilike, or, inArray, max, type AnyColumn } from "drizzle-orm";
 
@@ -1687,7 +1688,7 @@ export async function upsertDeliverySetting(data: {
 // ═══════════════════════════════════════════════════════════════
 
 export async function getStoreSettings() {
-  await requireAdmin();
+  await requireAdminOrCashier();
 
   const [settings] = await db.select().from(storeSettings).limit(1);
   return settings ?? null;
@@ -2195,6 +2196,14 @@ export async function createInStoreBill(data: {
     }
   }
 
+  // Prevent negative totals
+  if (Number(data.totalAmount) < 0) {
+    throw new Error("Total amount cannot be negative");
+  }
+  if (Number(data.taxableAmount) < 0) {
+    throw new Error("Taxable amount cannot be negative");
+  }
+
   // Validate stock availability BEFORE creating the bill
   const variantItems = parsedItems.filter(item => item.variantId);
   if (variantItems.length > 0) {
@@ -2240,7 +2249,7 @@ export async function createInStoreBill(data: {
     })
     .returning();
 
-  // Deduct stock for each sold item — errors here are critical, not silently swallowed
+  // Deduct stock for each sold item with audit trail
   for (const item of parsedItems) {
     if (item.variantId) {
       await db
@@ -2250,11 +2259,29 @@ export async function createInStoreBill(data: {
           updatedAt: new Date(),
         })
         .where(eq(productVariants.variantId, item.variantId));
+
+      // Log stock movement for audit trail
+      const [updated] = await db
+        .select({ stockCount: productVariants.stockCount })
+        .from(productVariants)
+        .where(eq(productVariants.variantId, item.variantId));
+
+      await db.insert(stockAdjustments).values({
+        variantId: item.variantId,
+        type: "sale_out",
+        quantityChange: -item.quantity,
+        stockAfter: updated?.stockCount ?? 0,
+        referenceType: "bill",
+        referenceId: bill.billId,
+        reason: `In-store bill ${invoiceNumber}`,
+        createdBy: admin.email,
+      });
     }
   }
 
   revalidatePath("/studio/billing");
-  return bill;
+  revalidatePath("/studio/inventory");
+  return { billId: bill.billId, invoiceNumber: bill.invoiceNumber };
 }
 
 export async function getInStoreBills(params?: { page?: number; search?: string }) {

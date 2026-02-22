@@ -70,10 +70,11 @@ export async function GET(
     const discount = Number(order.discountAmount);
     const deliveryCharge = Number(order.deliveryCharge);
     const total = Number(order.totalAmount);
-    const taxableAmount = subtotal - discount;
     const gstRate = Number(store.enableGst ? (settings?.gstRate ?? "5.00") : "0");
     const halfRate = gstRate / 2;
-    const totalTax = store.enableGst ? (taxableAmount * gstRate) / (100 + gstRate) : 0;
+    const afterDiscount = subtotal - discount;
+    const totalTax = store.enableGst ? (afterDiscount * gstRate) / (100 + gstRate) : 0;
+    const taxableAmount = afterDiscount - totalTax; // exclusive of GST
     const cgstAmount = totalTax / 2;
     const sgstAmount = totalTax / 2;
 
