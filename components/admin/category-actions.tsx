@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   createCategory,
   updateCategory,
@@ -40,6 +41,7 @@ export function CategoryActions({
   categories,
   editCategory,
 }: CategoryActionsProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -84,6 +86,7 @@ export function CategoryActions({
           toast.success("Category created");
         }
         setOpen(false);
+        router.refresh();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to save category");
       }

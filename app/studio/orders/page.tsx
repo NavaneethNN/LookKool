@@ -2,6 +2,7 @@ import { getAdminOrders } from "@/lib/actions/admin-actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import Link from "next/link";
+import { Eye } from "lucide-react";
 
 const statusFilters = [
   "all",
@@ -72,6 +73,9 @@ export default async function OrdersPage({
                 <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Total
                 </th>
+                <th className="text-center px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -112,12 +116,21 @@ export default async function OrdersPage({
                   <td className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
                     ₹{Number(order.totalAmount).toLocaleString("en-IN")}
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    <Link
+                      href={`/studio/orders/${order.orderId}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      View
+                    </Link>
+                  </td>
                 </tr>
               ))}
               {orders.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-12 text-center text-sm text-gray-400"
                   >
                     No orders found

@@ -93,12 +93,14 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     >
   ) {
     const { name, value, type } = e.target;
+    // Keep price fields as strings to avoid Number("") = 0 issue
+    const stringFields = ["basePrice", "mrp"];
     setForm((prev) => ({
       ...prev,
       [name]:
         type === "checkbox"
           ? (e.target as HTMLInputElement).checked
-          : type === "number"
+          : type === "number" && !stringFields.includes(name)
           ? Number(value)
           : value,
     }));
@@ -501,7 +503,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
       </div>
 
       {/* ── Submit Bar ───────────────────────────────── */}
-      <div className="flex items-center justify-between sticky bottom-0 bg-white/80 backdrop-blur-sm border rounded-xl px-6 py-4 shadow-sm">
+      <div className="flex items-center justify-between sticky bottom-0 z-20 bg-white border-t px-6 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
         <Button
           type="button"
           variant="outline"

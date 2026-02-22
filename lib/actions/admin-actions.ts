@@ -1026,7 +1026,7 @@ export async function createCategory(data: {
 }) {
   await requireAdmin();
 
-  const [cat] = await db
+  await db
     .insert(categories)
     .values({
       categoryName: data.categoryName,
@@ -1036,12 +1036,11 @@ export async function createCategory(data: {
       parentCategoryId: data.parentCategoryId || null,
       isActive: data.isActive ?? true,
       sortOrder: data.sortOrder ?? 99,
-    })
-    .returning();
+    });
 
   revalidatePath("/studio/categories");
   revalidateTag("categories");
-  return cat;
+  return { success: true };
 }
 
 export async function updateCategory(

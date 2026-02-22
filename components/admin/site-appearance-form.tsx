@@ -933,7 +933,7 @@ export function SiteAppearanceForm({
       </Section>
 
       {/* ── Save ───────────────────────────────────────────── */}
-      <div className="flex justify-end">
+      <div className="flex justify-end sticky bottom-0 z-20 bg-white border-t px-6 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
         <Button
           onClick={handleSave}
           disabled={saving}
