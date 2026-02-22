@@ -883,6 +883,23 @@ export async function cancelPendingOrder(orderId: number) {
       )
     );
 
+  // Reverse coupon usage if a coupon was applied
+  if (order.couponCode) {
+    const [usage] = await db
+      .select({ usageId: couponUsage.usageId, couponId: couponUsage.couponId })
+      .from(couponUsage)
+      .where(eq(couponUsage.orderId, orderId))
+      .limit(1);
+
+    if (usage) {
+      await db.delete(couponUsage).where(eq(couponUsage.usageId, usage.usageId));
+      await db
+        .update(coupons)
+        .set({ usageCount: sql`GREATEST(${coupons.usageCount} - 1, 0)` })
+        .where(eq(coupons.couponId, usage.couponId));
+    }
+  }
+
   revalidatePath("/account/orders");
   return { success: true };
 }
@@ -1048,6 +1065,23 @@ export async function cancelConfirmedOrder(orderId: number) {
       .update(orders)
       .set({ paymentStatus: "Failed", updatedAt: new Date() })
       .where(eq(orders.orderId, orderId));
+  }
+
+  // Reverse coupon usage if a coupon was applied
+  if (order.couponCode) {
+    const [usage] = await db
+      .select({ usageId: couponUsage.usageId, couponId: couponUsage.couponId })
+      .from(couponUsage)
+      .where(eq(couponUsage.orderId, orderId))
+      .limit(1);
+
+    if (usage) {
+      await db.delete(couponUsage).where(eq(couponUsage.usageId, usage.usageId));
+      await db
+        .update(coupons)
+        .set({ usageCount: sql`GREATEST(${coupons.usageCount} - 1, 0)` })
+        .where(eq(coupons.couponId, usage.couponId));
+    }
   }
 
   revalidatePath("/account/orders");

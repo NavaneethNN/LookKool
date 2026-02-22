@@ -1187,6 +1187,7 @@ export async function updateUserRole(userId: string, role: "customer" | "admin" 
     .where(eq(users.userId, userId));
 
   revalidatePath("/studio/customers");
+  revalidatePath(`/studio/customers/${userId}`);
   return { success: true };
 }
 
@@ -1375,7 +1376,7 @@ export async function createCoupon(data: {
   }
 
   revalidatePath("/studio/coupons");
-  return coupon;
+  return { success: true };
 }
 
 export async function updateCoupon(
@@ -1405,7 +1406,16 @@ export async function updateCoupon(
     if (isNaN(discountVal) || discountVal <= 0) {
       throw new Error("Discount value must be a positive number");
     }
-    const resolvedType = data.discountType;
+    // Resolve type from input or DB to validate percentage cap
+    let resolvedType = data.discountType;
+    if (!resolvedType) {
+      const [existing] = await db
+        .select({ discountType: coupons.discountType })
+        .from(coupons)
+        .where(eq(coupons.couponId, couponId))
+        .limit(1);
+      resolvedType = existing?.discountType;
+    }
     if (resolvedType === "percentage" && discountVal > 100) {
       throw new Error("Percentage discount cannot exceed 100%");
     }

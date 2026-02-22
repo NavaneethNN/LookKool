@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { updateUserRole } from "@/lib/actions/admin-actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ export function CustomerRoleToggle({
   userId,
   currentRole,
 }: CustomerRoleToggleProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function handleRoleChange(newRole: RoleKey) {
@@ -39,6 +41,7 @@ export function CustomerRoleToggle({
       try {
         await updateUserRole(userId, newRole);
         toast.success(`Role updated to ${roleConfig[newRole].label}`);
+        router.refresh();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to update role");
       }

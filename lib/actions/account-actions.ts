@@ -300,6 +300,18 @@ export async function deleteAddress(addressId: number) {
     return { error: "Invalid address" };
   }
 
+  // Check if the address being deleted is the default
+  const [deletedAddr] = await db
+    .select({ isDefault: userAddresses.isDefault })
+    .from(userAddresses)
+    .where(
+      and(
+        eq(userAddresses.addressId, addressId),
+        eq(userAddresses.userId, user.id)
+      )
+    )
+    .limit(1);
+
   await db
     .delete(userAddresses)
     .where(
@@ -308,6 +320,22 @@ export async function deleteAddress(addressId: number) {
         eq(userAddresses.userId, user.id)
       )
     );
+
+  // If the deleted address was the default, promote the first remaining address
+  if (deletedAddr?.isDefault) {
+    const [firstRemaining] = await db
+      .select({ addressId: userAddresses.addressId })
+      .from(userAddresses)
+      .where(eq(userAddresses.userId, user.id))
+      .limit(1);
+
+    if (firstRemaining) {
+      await db
+        .update(userAddresses)
+        .set({ isDefault: true })
+        .where(eq(userAddresses.addressId, firstRemaining.addressId));
+    }
+  }
 
   revalidatePath("/account/addresses");
   revalidatePath("/checkout");
