@@ -39,7 +39,7 @@ export async function getBackupData() {
     db.select().from(purchaseOrders),
     // Only select non-sensitive fields for backup - exclude auth details
     db.select({
-      userId: users.userId,
+      userId: users.id,
       name: users.name,
       phoneNumber: users.phoneNumber,
       role: users.role,

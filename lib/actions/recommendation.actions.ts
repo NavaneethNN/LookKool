@@ -10,7 +10,7 @@ import {
   reviews,
 } from "@/db/schema";
 import { eq, and, desc, asc, sql, ne, count, avg, gte, notInArray } from "drizzle-orm";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
 
 // ─── Constants ─────────────────────────────────────────────────
 
@@ -497,14 +497,9 @@ export async function getPersonalizedPicks(
   limit = clampLimit(limit);
 
   // Use authenticated userId — ignore any client-supplied userId
-  // If called from a server component, the passed userId is trusted.
-  // But we verify auth if possible to prevent IDOR.
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      userId = user.id; // Always use the authenticated user's ID
-    }
+    const { userId: authUserId } = await requireAuth();
+    userId = authUserId;
   } catch {
     // If auth fails, fall back to the provided userId (for SSR contexts)
   }

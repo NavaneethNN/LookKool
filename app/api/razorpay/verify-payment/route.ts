@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
     // ─── Authentication check ──────────────────────────────
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
 
-    if (!user) {
+    if (!session?.user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }

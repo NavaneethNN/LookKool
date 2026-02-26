@@ -90,7 +90,7 @@ export const couponCustomers = pgTable("coupon_customers", {
     .references(() => coupons.couponId, { onDelete: "cascade" }),
   userId: uuid("user_id")
     .notNull()
-    .references(() => users.userId, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
 });
 
 /**
@@ -104,7 +104,7 @@ export const couponUsage = pgTable("coupon_usage", {
     .references(() => coupons.couponId, { onDelete: "cascade" }),
   userId: uuid("user_id")
     .notNull()
-    .references(() => users.userId),
+    .references(() => users.id),
   // FK to orders.order_id added in orders.ts to avoid circular import
   orderId: integer("order_id").notNull(),
   discountAmountApplied: decimal("discount_amount_applied", {

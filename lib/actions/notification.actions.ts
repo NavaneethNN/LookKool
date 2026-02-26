@@ -7,17 +7,13 @@ import {
   users,
 } from "@/db/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
 
 // ─── Helpers ──────────────────────────────────────────────────
 
 async function getAuthUserId(): Promise<string> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return user.id;
+  const { userId } = await requireAuth();
+  return userId;
 }
 
 // ─── Read notifications (customer-facing) ──────────────────────
@@ -207,7 +203,7 @@ export async function notifyAdmins(data: {
   data?: Record<string, unknown>;
 }) {
   const admins = await db
-    .select({ userId: users.userId })
+    .select({ userId: users.id })
     .from(users)
     .where(
       sql`${users.role} IN ('admin', 'cashier')`

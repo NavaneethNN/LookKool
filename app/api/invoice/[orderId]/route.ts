@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrderInvoiceData } from "@/lib/actions/order.actions";
 import { getStoreSettings } from "@/lib/actions/settings.actions";
 import { generateInvoiceHTML, buildLayoutConfig } from "@/lib/invoice-template";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -13,15 +13,14 @@ export async function GET(
 ) {
   try {
     // Authenticate: must be admin or cashier
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const [profile] = await db
       .select({ role: users.role })
       .from(users)
-      .where(eq(users.userId, user.id))
+      .where(eq(users.id, session.user.id))
       .limit(1);
     if (!profile || (profile.role !== "admin" && profile.role !== "cashier")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -31,7 +31,7 @@ export const notifications = pgTable("notifications", {
   notificationId: serial("notification_id").primaryKey(),
   userId: uuid("user_id")
     .notNull()
-    .references(() => users.userId, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
   type: notificationTypeEnum("type").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
@@ -54,7 +54,7 @@ export const notificationPreferences = pgTable("notification_preferences", {
   userId: uuid("user_id")
     .notNull()
     .unique()
-    .references(() => users.userId, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
   orderNotifications: boolean("order_notifications").notNull().default(true),
   offerNotifications: boolean("offer_notifications").notNull().default(true),
   systemNotifications: boolean("system_notifications").notNull().default(true),
@@ -71,7 +71,7 @@ export const notificationPreferences = pgTable("notification_preferences", {
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
-    references: [users.userId],
+    references: [users.id],
   }),
 }));
 
@@ -80,7 +80,7 @@ export const notificationPreferencesRelations = relations(
   ({ one }) => ({
     user: one(users, {
       fields: [notificationPreferences.userId],
-      references: [users.userId],
+      references: [users.id],
     }),
   })
 );

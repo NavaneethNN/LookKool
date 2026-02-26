@@ -34,7 +34,7 @@ export async function getAdminCustomers(params?: {
 
   const allUsers = await db
     .select({
-      userId: users.userId,
+      userId: users.id,
       name: users.name,
       email: users.email,
       phoneNumber: users.phoneNumber,
@@ -69,7 +69,7 @@ export async function getAdminCustomerDetail(userId: string) {
   const [customer] = await db
     .select()
     .from(users)
-    .where(eq(users.userId, userId))
+    .where(eq(users.id, userId))
     .limit(1);
 
   const addresses = await db
@@ -97,7 +97,7 @@ export async function updateUserRole(userId: string, role: "customer" | "admin" 
   await db
     .update(users)
     .set({ role, updatedAt: new Date() })
-    .where(eq(users.userId, userId));
+    .where(eq(users.id, userId));
 
   revalidatePath("/studio/customers");
   revalidatePath(`/studio/customers/${userId}`);

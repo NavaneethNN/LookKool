@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
 import { db } from "@/db";
 import { returnRequests, orders, orderItems, storeSettings } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -9,12 +9,8 @@ import { revalidatePath } from "next/cache";
 // ─── Helpers ───────────────────────────────────────────────────
 
 async function getAuthUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return user;
+  const { userId } = await requireAuth();
+  return { id: userId };
 }
 
 // ─── Submit return request ─────────────────────────────────────

@@ -85,7 +85,7 @@ export async function getAdminOrderDetail(orderId: number) {
     where: eq(orders.orderId, orderId),
     with: {
       user: {
-        columns: { userId: true, name: true, email: true, phoneNumber: true },
+        columns: { id: true, name: true, email: true, phoneNumber: true },
       },
       items: {
         with: {
@@ -135,7 +135,7 @@ export async function updateOrderStatus(orderId: number, status: string) {
         const [dbUser] = await db
           .select({ name: users.name, email: users.email })
           .from(users)
-          .where(eq(users.userId, order.userId))
+          .where(eq(users.id, order.userId))
           .limit(1);
 
         if (dbUser?.email) {
@@ -327,7 +327,7 @@ export async function resolveReturn(
       const [dbUser] = await db
         .select({ name: users.name, email: users.email })
         .from(users)
-        .where(eq(users.userId, returnReq.userId))
+        .where(eq(users.id, returnReq.userId))
         .limit(1);
 
       if (dbUser?.email) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -8,12 +8,11 @@ import { eq, and } from "drizzle-orm";
 export async function POST(request: NextRequest) {
   try {
     // ─── Authentication check ──────────────────────────────
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
 
-    if (!user) {
+    if (!session?.user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           eq(orders.orderId, orderId),
-          eq(orders.userId, user.id),
+          eq(orders.userId, session.user.id),
           eq(orders.paymentStatus, "Pending"),
           eq(orders.paymentMethod, "razorpay")
         )

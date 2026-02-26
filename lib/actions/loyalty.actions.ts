@@ -23,7 +23,7 @@ export async function getCustomerLoyalty(userId: string) {
 
   const [user] = await db
     .select({
-      userId: users.userId,
+      userId: users.id,
       name: users.name,
       email: users.email,
       loyaltyPoints: users.loyaltyPoints,
@@ -31,7 +31,7 @@ export async function getCustomerLoyalty(userId: string) {
       totalSpent: users.totalSpent,
     })
     .from(users)
-    .where(eq(users.userId, userId))
+    .where(eq(users.id, userId))
     .limit(1);
 
   if (!user) throw new Error("Customer not found");
@@ -68,7 +68,7 @@ export async function addLoyaltyPoints(params: {
       loyaltyPoints: sql`${users.loyaltyPoints} + ${params.points}`,
       updatedAt: new Date(),
     })
-    .where(eq(users.userId, params.userId));
+    .where(eq(users.id, params.userId));
 
   await db.insert(loyaltyTransactions).values({
     userId: params.userId,
@@ -98,7 +98,7 @@ export async function deductLoyaltyPoints(params: {
   const [user] = await db
     .select({ loyaltyPoints: users.loyaltyPoints })
     .from(users)
-    .where(eq(users.userId, params.userId))
+    .where(eq(users.id, params.userId))
     .limit(1);
 
   if (!user || user.loyaltyPoints < params.points) {
@@ -111,7 +111,7 @@ export async function deductLoyaltyPoints(params: {
       loyaltyPoints: sql`${users.loyaltyPoints} - ${params.points}`,
       updatedAt: new Date(),
     })
-    .where(eq(users.userId, params.userId));
+    .where(eq(users.id, params.userId));
 
   await db.insert(loyaltyTransactions).values({
     userId: params.userId,
@@ -146,7 +146,7 @@ export async function addStoreCredit(params: {
       creditBalance: sql`${users.creditBalance} + ${params.amount.toFixed(2)}`,
       updatedAt: new Date(),
     })
-    .where(eq(users.userId, params.userId));
+    .where(eq(users.id, params.userId));
 
   await db.insert(loyaltyTransactions).values({
     userId: params.userId,
@@ -175,7 +175,7 @@ export async function deductStoreCredit(params: {
   const [user] = await db
     .select({ creditBalance: users.creditBalance })
     .from(users)
-    .where(eq(users.userId, params.userId))
+    .where(eq(users.id, params.userId))
     .limit(1);
 
   if (!user || Number(user.creditBalance) < params.amount) {
@@ -188,7 +188,7 @@ export async function deductStoreCredit(params: {
       creditBalance: sql`${users.creditBalance} - ${params.amount.toFixed(2)}`,
       updatedAt: new Date(),
     })
-    .where(eq(users.userId, params.userId));
+    .where(eq(users.id, params.userId));
 
   await db.insert(loyaltyTransactions).values({
     userId: params.userId,
@@ -222,7 +222,7 @@ export async function awardPointsForPurchase(params: {
       totalSpent: sql`${users.totalSpent} + ${params.billTotal.toFixed(2)}`,
       updatedAt: new Date(),
     })
-    .where(eq(users.userId, params.userId));
+    .where(eq(users.id, params.userId));
 
   await db.insert(loyaltyTransactions).values({
     userId: params.userId,
@@ -247,7 +247,7 @@ export async function redeemLoyaltyPoints(params: {
   const [user] = await db
     .select({ loyaltyPoints: users.loyaltyPoints })
     .from(users)
-    .where(eq(users.userId, params.userId))
+    .where(eq(users.id, params.userId))
     .limit(1);
 
   if (!user || user.loyaltyPoints < params.points) {
@@ -262,7 +262,7 @@ export async function redeemLoyaltyPoints(params: {
       loyaltyPoints: sql`${users.loyaltyPoints} - ${params.points}`,
       updatedAt: new Date(),
     })
-    .where(eq(users.userId, params.userId));
+    .where(eq(users.id, params.userId));
 
   await db.insert(loyaltyTransactions).values({
     userId: params.userId,
@@ -286,7 +286,7 @@ export async function useStoreCredit(params: {
   const [user] = await db
     .select({ creditBalance: users.creditBalance })
     .from(users)
-    .where(eq(users.userId, params.userId))
+    .where(eq(users.id, params.userId))
     .limit(1);
 
   if (!user || Number(user.creditBalance) < params.amount) {
@@ -299,7 +299,7 @@ export async function useStoreCredit(params: {
       creditBalance: sql`${users.creditBalance} - ${params.amount.toFixed(2)}`,
       updatedAt: new Date(),
     })
-    .where(eq(users.userId, params.userId));
+    .where(eq(users.id, params.userId));
 
   await db.insert(loyaltyTransactions).values({
     userId: params.userId,

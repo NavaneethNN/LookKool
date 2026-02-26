@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { authClient } from "@/lib/auth-client";
 
 interface AuthUser {
   id: string;
@@ -10,40 +9,15 @@ interface AuthUser {
 
 /**
  * Client-side auth hook.
- * Checks the current Supabase session and subscribes to auth changes.
- * Used by Navbar and ReviewForm so server components don't need cookies().
+ * Uses Better Auth's useSession() hook.
+ * Returns same { user, loading } interface as the old Supabase hook.
  */
 export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: session, isPending } = authClient.useSession();
 
-  useEffect(() => {
-    const supabase = createClient();
+  const user: AuthUser | null = session?.user
+    ? { id: session.user.id, email: session.user.email ?? undefined }
+    : null;
 
-    // Initial check
-    supabase.auth.getUser().then(({ data: { user: u } }) => {
-      setUser(u ? { id: u.id, email: u.email ?? undefined } : null);
-      setLoading(false);
-    }).catch(() => {
-      // Network or cookie error — treat as unauthenticated
-      setUser(null);
-      setLoading(false);
-    });
-
-    // Subscribe to meaningful auth changes only (ignore token refreshes)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "TOKEN_REFRESHED") return; // silent refresh — no re-render
-      setUser(
-        session?.user
-          ? { id: session.user.id, email: session.user.email ?? undefined }
-          : null
-      );
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  return { user, loading };
+  return { user, loading: isPending };
 }

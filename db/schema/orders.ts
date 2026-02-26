@@ -57,7 +57,7 @@ export const orders = pgTable("orders", {
   orderId: serial("order_id").primaryKey(),
   userId: uuid("user_id")
     .notNull()
-    .references(() => users.userId),
+    .references(() => users.id),
   orderDate: timestamp("order_date", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -143,7 +143,7 @@ export const returnRequests = pgTable("return_requests", {
     .references(() => orderItems.orderItemId),
   userId: uuid("user_id")
     .notNull()
-    .references(() => users.userId),
+    .references(() => users.id),
   reason: varchar("reason", { length: 255 }).notNull(),
   description: text("description"),
   status: returnStatusEnum("status").notNull().default("Pending"),
@@ -163,7 +163,7 @@ export const returnRequests = pgTable("return_requests", {
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   user: one(users, {
     fields: [orders.userId],
-    references: [users.userId],
+    references: [users.id],
   }),
   items: many(orderItems),
   returns: many(returnRequests),
@@ -195,6 +195,6 @@ export const returnRequestsRelations = relations(returnRequests, ({ one }) => ({
   }),
   user: one(users, {
     fields: [returnRequests.userId],
-    references: [users.userId],
+    references: [users.id],
   }),
 }));

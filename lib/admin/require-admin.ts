@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/auth-helpers";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -11,26 +11,23 @@ import { cache } from "react";
  * Wrapped with React cache() so multiple calls within the same request are deduped.
  */
 export const requireAdmin = cache(async () => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session?.user) {
     redirect("/sign-in");
   }
 
   const [profile] = await db
     .select({ role: users.role })
     .from(users)
-    .where(eq(users.userId, user.id))
+    .where(eq(users.id, session.user.id))
     .limit(1);
 
   if (!profile || profile.role !== "admin") {
     redirect("/");
   }
 
-  return { userId: user.id, email: user.email ?? "" };
+  return { userId: session.user.id, email: session.user.email ?? "" };
 });
 
 /**
@@ -38,22 +35,19 @@ export const requireAdmin = cache(async () => {
  * Useful for conditional rendering in layouts.
  */
 export const checkAdmin = cache(async () => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) return null;
+  if (!session?.user) return null;
 
   const [profile] = await db
     .select({ role: users.role })
     .from(users)
-    .where(eq(users.userId, user.id))
+    .where(eq(users.id, session.user.id))
     .limit(1);
 
   if (!profile || profile.role !== "admin") return null;
 
-  return { userId: user.id, email: user.email ?? "" };
+  return { userId: session.user.id, email: session.user.email ?? "" };
 });
 
 /**
@@ -63,24 +57,21 @@ export const checkAdmin = cache(async () => {
  * Wrapped with React cache() so multiple calls within the same request are deduped.
  */
 export const requireAdminOrCashier = cache(async () => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session?.user) {
     redirect("/sign-in");
   }
 
   const [profile] = await db
     .select({ role: users.role })
     .from(users)
-    .where(eq(users.userId, user.id))
+    .where(eq(users.id, session.user.id))
     .limit(1);
 
   if (!profile || (profile.role !== "admin" && profile.role !== "cashier")) {
     redirect("/");
   }
 
-  return { userId: user.id, email: user.email ?? "", role: profile.role as "admin" | "cashier" };
+  return { userId: session.user.id, email: session.user.email ?? "", role: profile.role as "admin" | "cashier" };
 });

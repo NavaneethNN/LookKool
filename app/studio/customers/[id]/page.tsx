@@ -30,7 +30,7 @@ export default async function CustomerDetailPage({
 
       <PageHeader title={customer.name} description={customer.email}>
         <CustomerRoleToggle
-          userId={customer.userId}
+          userId={customer.id}
           currentRole={customer.role}
         />
       </PageHeader>
@@ -159,7 +159,7 @@ export default async function CustomerDetailPage({
 
       {/* Loyalty & Credit Section */}
       <div className="grid grid-cols-1 gap-6 mt-6">
-        <CustomerLoyaltyCard userId={customer.userId} />
+        <CustomerLoyaltyCard userId={customer.id} />
       </div>
     </>
   );

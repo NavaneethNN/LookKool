@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
 import { db } from "@/db";
 import { users, userAddresses } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -16,17 +16,6 @@ const MAX_LABEL_LENGTH = 50;
 const PINCODE_REGEX = /^\d{6}$/;
 const PHONE_REGEX = /^\d{10,15}$/;
 const MAX_ADDRESSES_PER_USER = 10;
-
-// ─── Helpers ───────────────────────────────────────────────────
-
-async function getAuthUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return user;
-}
 
 function validateAddressFields(fields: {
   fullName: string | null;
@@ -74,7 +63,7 @@ function validateAddressFields(fields: {
 // ─── Profile ───────────────────────────────────────────────────
 
 export async function updateProfile(formData: FormData) {
-  const user = await getAuthUser();
+  const { userId, email } = await requireAuth();
   const name = (formData.get("name") as string)?.trim();
   const phone = (formData.get("phone") as string)?.trim() || null;
 
@@ -88,29 +77,23 @@ export async function updateProfile(formData: FormData) {
     return { error: "Please enter a valid phone number (10-15 digits)" };
   }
 
-  // Update Supabase auth metadata
-  const supabase = await createClient();
-  await supabase.auth.updateUser({
-    data: { full_name: name },
-  });
-
   // Upsert into our users table
   const existing = await db
     .select()
     .from(users)
-    .where(eq(users.userId, user.id))
+    .where(eq(users.id, userId))
     .limit(1);
 
   if (existing.length > 0) {
     await db
       .update(users)
       .set({ name, phoneNumber: phone, updatedAt: new Date() })
-      .where(eq(users.userId, user.id));
+      .where(eq(users.id, userId));
   } else {
     await db.insert(users).values({
-      userId: user.id,
+      id: userId,
       name,
-      email: user.email!,
+      email,
       phoneNumber: phone,
     });
   }
@@ -121,21 +104,17 @@ export async function updateProfile(formData: FormData) {
 }
 
 export async function getProfile() {
-  const user = await getAuthUser();
+  const { userId, email } = await requireAuth();
   const profile = await db
     .select()
     .from(users)
-    .where(eq(users.userId, user.id))
+    .where(eq(users.id, userId))
     .limit(1);
 
   return {
-    userId: user.id,
-    email: user.email!,
-    name:
-      profile[0]?.name ||
-      user.user_metadata?.full_name ||
-      user.email?.split("@")[0] ||
-      "",
+    userId,
+    email,
+    name: profile[0]?.name || email.split("@")[0] || "",
     phone: profile[0]?.phoneNumber || "",
   };
 }
@@ -143,11 +122,11 @@ export async function getProfile() {
 // ─── Addresses ─────────────────────────────────────────────────
 
 export async function getAddresses() {
-  const user = await getAuthUser();
+  const { userId } = await requireAuth();
   const addresses = await db
     .select()
     .from(userAddresses)
-    .where(eq(userAddresses.userId, user.id))
+    .where(eq(userAddresses.userId, userId))
     .orderBy(userAddresses.isDefault);
 
   return addresses.map((a) => ({
@@ -166,7 +145,7 @@ export async function getAddresses() {
 }
 
 export async function addAddress(formData: FormData) {
-  const user = await getAuthUser();
+  const { userId } = await requireAuth();
 
   const label = (formData.get("label") as string)?.trim() || null;
   const fullName = (formData.get("fullName") as string)?.trim();
@@ -195,7 +174,7 @@ export async function addAddress(formData: FormData) {
   const existing = await db
     .select({ addressId: userAddresses.addressId })
     .from(userAddresses)
-    .where(eq(userAddresses.userId, user.id));
+    .where(eq(userAddresses.userId, userId));
 
   if (existing.length >= MAX_ADDRESSES_PER_USER) {
     return { error: `You can save a maximum of ${MAX_ADDRESSES_PER_USER} addresses` };
@@ -206,13 +185,13 @@ export async function addAddress(formData: FormData) {
     await db
       .update(userAddresses)
       .set({ isDefault: false })
-      .where(eq(userAddresses.userId, user.id));
+      .where(eq(userAddresses.userId, userId));
   }
 
   const shouldDefault = isDefault || existing.length === 0;
 
   await db.insert(userAddresses).values({
-    userId: user.id,
+    userId: userId,
     label,
     fullName,
     phoneNumber,
@@ -230,7 +209,7 @@ export async function addAddress(formData: FormData) {
 }
 
 export async function updateAddress(addressId: number, formData: FormData) {
-  const user = await getAuthUser();
+  const { userId } = await requireAuth();
 
   if (!Number.isInteger(addressId) || addressId < 1) {
     return { error: "Invalid address" };
@@ -264,7 +243,7 @@ export async function updateAddress(addressId: number, formData: FormData) {
     await db
       .update(userAddresses)
       .set({ isDefault: false })
-      .where(eq(userAddresses.userId, user.id));
+      .where(eq(userAddresses.userId, userId));
   }
 
   await db
@@ -284,7 +263,7 @@ export async function updateAddress(addressId: number, formData: FormData) {
     .where(
       and(
         eq(userAddresses.addressId, addressId),
-        eq(userAddresses.userId, user.id)
+        eq(userAddresses.userId, userId)
       )
     );
 
@@ -294,7 +273,7 @@ export async function updateAddress(addressId: number, formData: FormData) {
 }
 
 export async function deleteAddress(addressId: number) {
-  const user = await getAuthUser();
+  const { userId } = await requireAuth();
 
   if (!Number.isInteger(addressId) || addressId < 1) {
     return { error: "Invalid address" };
@@ -307,7 +286,7 @@ export async function deleteAddress(addressId: number) {
     .where(
       and(
         eq(userAddresses.addressId, addressId),
-        eq(userAddresses.userId, user.id)
+        eq(userAddresses.userId, userId)
       )
     )
     .limit(1);
@@ -317,7 +296,7 @@ export async function deleteAddress(addressId: number) {
     .where(
       and(
         eq(userAddresses.addressId, addressId),
-        eq(userAddresses.userId, user.id)
+        eq(userAddresses.userId, userId)
       )
     );
 
@@ -326,7 +305,7 @@ export async function deleteAddress(addressId: number) {
     const [firstRemaining] = await db
       .select({ addressId: userAddresses.addressId })
       .from(userAddresses)
-      .where(eq(userAddresses.userId, user.id))
+      .where(eq(userAddresses.userId, userId))
       .limit(1);
 
     if (firstRemaining) {
@@ -343,7 +322,7 @@ export async function deleteAddress(addressId: number) {
 }
 
 export async function setDefaultAddress(addressId: number) {
-  const user = await getAuthUser();
+  const { userId } = await requireAuth();
 
   if (!Number.isInteger(addressId) || addressId < 1) {
     return { error: "Invalid address" };
@@ -356,7 +335,7 @@ export async function setDefaultAddress(addressId: number) {
     .where(
       and(
         eq(userAddresses.addressId, addressId),
-        eq(userAddresses.userId, user.id)
+        eq(userAddresses.userId, userId)
       )
     )
     .limit(1);
@@ -369,7 +348,7 @@ export async function setDefaultAddress(addressId: number) {
   await db
     .update(userAddresses)
     .set({ isDefault: false })
-    .where(eq(userAddresses.userId, user.id));
+    .where(eq(userAddresses.userId, userId));
 
   // Set the selected one
   await db
@@ -378,7 +357,7 @@ export async function setDefaultAddress(addressId: number) {
     .where(
       and(
         eq(userAddresses.addressId, addressId),
-        eq(userAddresses.userId, user.id)
+        eq(userAddresses.userId, userId)
       )
     );
 

@@ -1,9 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { requireAuthOrRedirect } from "@/lib/auth-helpers";
 import { signOut } from "@/lib/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Mail, LogOut, Package, Heart, MapPin, Pencil } from "lucide-react";
 import Link from "next/link";
@@ -14,17 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default async function AccountPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await requireAuthOrRedirect();
+  const user = session.user;
 
-  if (!user) {
-    redirect("/sign-in");
-  }
-
-  const fullName =
-    user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
+  const fullName = user.name || user.email?.split("@")[0] || "User";
 
   const quickLinks = [
     { icon: Package, label: "My Orders", href: "/account/orders" },
@@ -49,9 +40,6 @@ export default async function AccountPage() {
               <span className="text-sm text-muted-foreground">{user.email}</span>
             </div>
           </div>
-          <Badge variant="secondary" className="hidden sm:inline-flex">
-            {user.app_metadata?.provider === "google" ? "Google" : "Email"}
-          </Badge>
         </CardHeader>
       </Card>
 

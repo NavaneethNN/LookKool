@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { uploadImage, deleteImage } from "@/lib/supabase/upload";
+import { uploadImage, deleteImage } from "@/lib/upload";
 import { Upload, X, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";

@@ -14,8 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { requireAuthOrRedirect } from "@/lib/auth-helpers";
 import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -54,12 +53,8 @@ const statusColor: Record<string, string> = {
 };
 
 export default async function OrderDetailPage({ params }: PageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/sign-in");
+  const session = await requireAuthOrRedirect();
+  const user = session.user;
 
   const orderId = parseInt(params.id);
   if (isNaN(orderId)) notFound();

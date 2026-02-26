@@ -1,89 +1,55 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
-import { createServerClient } from "@supabase/ssr";
 
 /**
  * Middleware
- * 1. Refreshes the Supabase session on every request
- * 2. Protects /account/* routes — redirects to /sign-in if not logged in
- * 3. Redirects logged-in users away from /sign-in, /sign-up
+ * Cookie-only check (Edge-safe — no DB calls, no postgres driver).
+ * 1. Checks for Better Auth session cookie
+ * 2. Protects /account/*, /checkout, /studio — redirects to /sign-in if no cookie
+ * 3. Redirects signed-in users away from /sign-in, /sign-up
+ *
+ * Role-based studio access is enforced in app/studio/layout.tsx via requireAdminOrCashier().
  */
 
 const protectedRoutes = ["/account", "/checkout", "/studio"];
 const authRoutes = ["/sign-in", "/sign-up"];
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check if this route needs auth at all
   const isProtected = protectedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
   const isAuthRoute = authRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
-  const needsAuth = isProtected || isAuthRoute;
 
-  // For public routes, just refresh the session (single getUser call)
-  // and return immediately — no extra auth checks needed
-  const { response, user } = await updateSession(request);
-
-  if (!needsAuth) {
-    return response;
+  if (!isProtected && !isAuthRoute) {
+    return NextResponse.next();
   }
 
-  // Protected routes → redirect to sign-in if not authenticated
-  if (isProtected && !user) {
+  // Cookie-only session check — Better Auth sets this cookie
+  const sessionCookie = request.cookies.get("better-auth.session_token");
+  const hasSession = !!sessionCookie?.value;
+
+  // Protected routes → redirect to sign-in if no session cookie
+  if (isProtected && !hasSession) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
     return NextResponse.redirect(url);
   }
 
-  // ─── Studio role guard ─────────────────────────────────────
-  // Only admin and cashier roles may access /studio/*
-  const isStudioRoute =
-    pathname === "/studio" || pathname.startsWith("/studio/");
-  if (isStudioRoute && user) {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll() {
-            // no-op — cookies already set by updateSession
-          },
-        },
-      }
-    );
-
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!profile || !["admin", "cashier"].includes(profile.role)) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // Auth routes → redirect to home if already authenticated
-  if (isAuthRoute && user) {
+  // Auth routes → redirect to home if already signed in
+  if (isAuthRoute && hasSession) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

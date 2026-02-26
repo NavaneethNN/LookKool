@@ -27,7 +27,7 @@ export const reviews = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => products.productId, { onDelete: "cascade" }),
-    userId: uuid("user_id").references(() => users.userId, {
+    userId: uuid("user_id").references(() => users.id, {
       onDelete: "set null",
     }),
     reviewerName: text("reviewer_name").notNull(),
@@ -56,7 +56,7 @@ export const wishlist = pgTable("wishlist", {
   wishlistId: serial("wishlist_id").primaryKey(),
   userId: uuid("user_id")
     .notNull()
-    .references(() => users.userId, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
   productId: integer("product_id")
     .notNull()
     .references(() => products.productId, { onDelete: "cascade" }),
@@ -72,7 +72,7 @@ export const cart = pgTable("cart", {
   cartId: serial("cart_id").primaryKey(),
   userId: uuid("user_id")
     .notNull()
-    .references(() => users.userId, { onDelete: "cascade" }),
+    .references(() => users.id, { onDelete: "cascade" }),
   variantId: integer("variant_id")
     .notNull()
     .references(() => productVariants.variantId, { onDelete: "cascade" }),
@@ -94,14 +94,14 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   }),
   user: one(users, {
     fields: [reviews.userId],
-    references: [users.userId],
+    references: [users.id],
   }),
 }));
 
 export const wishlistRelations = relations(wishlist, ({ one }) => ({
   user: one(users, {
     fields: [wishlist.userId],
-    references: [users.userId],
+    references: [users.id],
   }),
   product: one(products, {
     fields: [wishlist.productId],
@@ -112,7 +112,7 @@ export const wishlistRelations = relations(wishlist, ({ one }) => ({
 export const cartRelations = relations(cart, ({ one }) => ({
   user: one(users, {
     fields: [cart.userId],
-    references: [users.userId],
+    references: [users.id],
   }),
   variant: one(productVariants, {
     fields: [cart.variantId],

@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
 import { db } from "@/db";
 import { reviews, orderItems, orders } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -19,12 +19,11 @@ function sanitizeText(input: string): string {
 }
 
 export async function submitReview(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  let user: { id: string };
+  try {
+    const { userId } = await requireAuth();
+    user = { id: userId };
+  } catch {
     return { error: "You must be signed in to leave a review" };
   }
 

@@ -65,7 +65,7 @@ export const paymentIssues = pgTable("payment_issues", {
   issueId: serial("issue_id").primaryKey(),
   userId: uuid("user_id")
     .notNull()
-    .references(() => users.userId),
+    .references(() => users.id),
   razorpayPaymentId: varchar("razorpay_payment_id", { length: 255 }).notNull(),
   razorpayOrderId: varchar("razorpay_order_id", { length: 255 }).notNull(),
   amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).notNull(),

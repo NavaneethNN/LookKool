@@ -161,9 +161,9 @@ export default async function OrderDetailPage({
                   {order.user.phoneNumber}
                 </p>
               )}
-              {order.user?.userId && (
+              {order.user?.id && (
                 <Link
-                  href={`/studio/customers/${order.user.userId}`}
+                  href={`/studio/customers/${order.user.id}`}
                   className="text-xs text-primary hover:underline"
                 >
                   View customer profile →

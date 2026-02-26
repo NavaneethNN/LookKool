@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
 import { db } from "@/db";
 import {
   orders,
@@ -147,12 +147,8 @@ async function computeDeliveryCharge(
 // ─── Helpers ───────────────────────────────────────────────────
 
 async function getAuthUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return user;
+  const { userId, email } = await requireAuth();
+  return { id: userId, email };
 }
 
 // ─── Coupon validation (secured) ───────────────────────────────
@@ -615,7 +611,7 @@ export async function createOrder(input: CreateOrderInput) {
     const [dbUser] = await db
       .select({ name: users.name, email: users.email })
       .from(users)
-      .where(eq(users.userId, user.id))
+      .where(eq(users.id, user.id))
       .limit(1);
 
     if (dbUser?.email) {

@@ -20,6 +20,9 @@
 // Users & addresses
 export * from "./users";
 
+// Auth (Better Auth sessions, accounts, verification)
+export * from "./auth";
+
 // Catalogue
 export * from "./categories";
 export * from "./products";
