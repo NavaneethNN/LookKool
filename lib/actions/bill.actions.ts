@@ -92,7 +92,7 @@ export async function createInStoreBill(data: {
   }
 
   // Validate numeric fields
-  const numericFields = ["subtotal", "discountAmount", "taxableAmount", "cgstAmount", "sgstAmount", "igstAmount", "totalAmount"] as const;
+  const numericFields = ["subtotal", "discountAmount", "taxableAmount", "cgstRate", "cgstAmount", "sgstRate", "sgstAmount", "igstRate", "igstAmount", "roundOff", "totalAmount"] as const;
   for (const field of numericFields) {
     if (isNaN(Number(data[field]))) {
       throw new Error(`Invalid numeric value for ${field}`);

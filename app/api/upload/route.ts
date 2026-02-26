@@ -48,7 +48,14 @@ export async function POST(request: NextRequest) {
 
     // Sanitize folder name
     const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "_");
-    const ext = path.extname(file.name) || ".jpg";
+    const MIME_TO_EXT: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+      "image/gif": ".gif",
+      "image/avif": ".avif",
+    };
+    const ext = MIME_TO_EXT[file.type] || ".jpg";
     const safeName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`;
 
     const uploadDir = path.join(process.cwd(), "public", "uploads", safeFolder);
@@ -78,12 +85,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Missing URL" }, { status: 400 });
     }
 
-    // Only allow deleting files in /uploads/
+    // Only allow deleting files in /uploads/ — resolve and verify to prevent path traversal
     if (!url.startsWith("/uploads/")) {
       return NextResponse.json({ error: "Invalid path" }, { status: 400 });
     }
 
-    const filePath = path.join(process.cwd(), "public", url);
+    const uploadsRoot = path.resolve(process.cwd(), "public", "uploads");
+    const filePath = path.resolve(process.cwd(), "public", url);
+    if (!filePath.startsWith(uploadsRoot)) {
+      return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    }
     try {
       await unlink(filePath);
     } catch {

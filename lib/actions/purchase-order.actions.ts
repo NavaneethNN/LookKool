@@ -102,11 +102,32 @@ export async function createPurchaseOrder(data: {
   const admin = await requireAdmin();
   const poNumber = await generatePONumber();
 
+  // Validate line items
+  if (!data.items || data.items.length === 0) {
+    throw new Error("At least one item is required");
+  }
+  for (const item of data.items) {
+    if (!item.variantId || !Number.isInteger(item.variantId) || item.variantId < 1) {
+      throw new Error("Each item must have a valid variant ID");
+    }
+    if (typeof item.orderedQty !== "number" || !Number.isInteger(item.orderedQty) || item.orderedQty < 1) {
+      throw new Error("Each item must have a valid ordered quantity >= 1");
+    }
+    if (isNaN(Number(item.costPrice)) || Number(item.costPrice) < 0) {
+      throw new Error("Each item must have a valid cost price");
+    }
+    if (isNaN(Number(item.gstRate)) || Number(item.gstRate) < 0) {
+      throw new Error("Each item must have a valid GST rate");
+    }
+  }
+
   let subtotal = 0;
   let gstTotal = 0;
   const itemsWithAmount = data.items.map(item => {
-    const amount = item.orderedQty * Number(item.costPrice);
-    const gst = amount * Number(item.gstRate) / 100;
+    const costPrice = Number(item.costPrice) || 0;
+    const gstRate = Number(item.gstRate) || 0;
+    const amount = item.orderedQty * costPrice;
+    const gst = amount * gstRate / 100;
     subtotal += amount;
     gstTotal += gst;
     return { ...item, amount: amount.toFixed(2) };
@@ -213,6 +234,11 @@ export async function receivePurchaseOrder(purchaseOrderId: number, receivedItem
 
 export async function updatePurchaseOrderPayment(poId: number, paidAmount: string) {
   await requireAdmin();
+
+  if (isNaN(Number(paidAmount)) || Number(paidAmount) < 0) {
+    throw new Error("Invalid paid amount");
+  }
+
   await db.update(purchaseOrders).set({ paidAmount, updatedAt: new Date() }).where(eq(purchaseOrders.purchaseOrderId, poId));
 
   // Update supplier total paid

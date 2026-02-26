@@ -102,10 +102,21 @@ export async function getBillReturns(billId?: number) {
 
 export async function createBillPayments(billId: number, payments: Array<{ paymentMode: string; amount: string; reference?: string }>) {
   await requireAdminOrCashier();
+
+  if (!payments || payments.length === 0) {
+    throw new Error("At least one payment is required");
+  }
+
   for (const p of payments) {
+    if (!p.paymentMode || typeof p.paymentMode !== "string" || p.paymentMode.trim().length === 0) {
+      throw new Error("Each payment must have a valid payment mode");
+    }
+    if (isNaN(Number(p.amount)) || Number(p.amount) < 0) {
+      throw new Error("Each payment must have a valid amount");
+    }
     await db.insert(billPayments).values({
       billId,
-      paymentMode: p.paymentMode,
+      paymentMode: p.paymentMode.trim(),
       amount: p.amount,
       reference: p.reference || null,
     });

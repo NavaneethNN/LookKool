@@ -27,13 +27,16 @@ export async function upsertDeliverySetting(data: {
 }) {
   await requireAdmin();
 
+  const minOrderAmount = data.minOrderAmount || "0.00";
+  const deliveryCharge = data.deliveryCharge || "0.00";
+
   if (data.settingId) {
     await db
       .update(deliverySettings)
       .set({
         label: data.label,
-        minOrderAmount: data.minOrderAmount,
-        deliveryCharge: data.deliveryCharge,
+        minOrderAmount,
+        deliveryCharge,
         isFreeDelivery: data.isFreeDelivery,
         stateCode: data.stateCode || null,
         isActive: data.isActive,
@@ -43,8 +46,8 @@ export async function upsertDeliverySetting(data: {
   } else {
     await db.insert(deliverySettings).values({
       label: data.label,
-      minOrderAmount: data.minOrderAmount,
-      deliveryCharge: data.deliveryCharge,
+      minOrderAmount,
+      deliveryCharge,
       isFreeDelivery: data.isFreeDelivery,
       stateCode: data.stateCode || null,
       isActive: data.isActive,
@@ -142,21 +145,49 @@ export async function upsertStoreSettings(data: {
 
   const [existing] = await db.select({ settingId: storeSettings.settingId }).from(storeSettings).limit(1);
 
+  const safeFields = {
+    businessName: data.businessName,
+    city: data.city,
+    state: data.state,
+    stateCode: data.stateCode,
+    gstRate: data.gstRate || "5.00",
+    hsnCode: data.hsnCode,
+    enableGst: data.enableGst,
+    invoicePrefix: data.invoicePrefix,
+    // Bill layout — guard NOT NULL columns with defaults
+    billPaperSize: data.billPaperSize || "A4",
+    billAccentColor: data.billAccentColor || "#470B49",
+    billTitle: data.billTitle || "TAX INVOICE",
+    billFontScale: data.billFontScale || "1.00",
+    billShowLogo: data.billShowLogo ?? false,
+    billShowHsn: data.billShowHsn ?? true,
+    billShowSku: data.billShowSku ?? true,
+    billShowGstSummary: data.billShowGstSummary ?? true,
+    billShowBankDetails: data.billShowBankDetails ?? true,
+    billShowSignatory: data.billShowSignatory ?? true,
+    billShowAmountWords: data.billShowAmountWords ?? true,
+    billShowCustomerSection: data.billShowCustomerSection ?? true,
+  };
+
   if (existing) {
     await db
       .update(storeSettings)
       .set({
-        ...data,
+        ...safeFields,
         ...nullableFields,
-        nextInvoiceNumber: data.nextInvoiceNumber ?? undefined,
+        nextInvoiceNumber: typeof data.nextInvoiceNumber === "number" && data.nextInvoiceNumber > 0
+          ? data.nextInvoiceNumber
+          : undefined,
         updatedAt: new Date(),
       })
       .where(eq(storeSettings.settingId, existing.settingId));
   } else {
     await db.insert(storeSettings).values({
-      ...data,
+      ...safeFields,
       ...nullableFields,
-      nextInvoiceNumber: data.nextInvoiceNumber ?? 1,
+      nextInvoiceNumber: typeof data.nextInvoiceNumber === "number" && data.nextInvoiceNumber > 0
+        ? data.nextInvoiceNumber
+        : 1,
     });
   }
 

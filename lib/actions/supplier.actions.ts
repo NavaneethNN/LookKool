@@ -106,7 +106,15 @@ export async function updateSupplier(supplierId: number, data: {
 }) {
   await requireAdmin();
 
-  await db.update(suppliers).set({ ...data, updatedAt: new Date() }).where(eq(suppliers.supplierId, supplierId));
+  const cleaned: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.name !== undefined) cleaned.name = data.name;
+  if (data.isActive !== undefined) cleaned.isActive = data.isActive;
+  // Nullable text fields — convert empty strings to null
+  for (const key of ["contactPerson", "phone", "email", "gstin", "pan", "addressLine1", "addressLine2", "city", "state", "pincode", "notes"] as const) {
+    if (data[key] !== undefined) cleaned[key] = data[key] || null;
+  }
+
+  await db.update(suppliers).set(cleaned).where(eq(suppliers.supplierId, supplierId));
 
   revalidatePath("/studio/suppliers");
   return { success: true };

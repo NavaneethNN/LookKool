@@ -179,8 +179,8 @@ export async function updateCoupon(
   if (data.description !== undefined) updateData.description = data.description;
   if (data.discountType !== undefined) updateData.discountType = data.discountType;
   if (data.discountValue !== undefined) updateData.discountValue = data.discountValue;
-  if (data.minPurchaseAmount !== undefined) updateData.minPurchaseAmount = data.minPurchaseAmount;
-  if (data.maxDiscountAmount !== undefined) updateData.maxDiscountAmount = data.maxDiscountAmount;
+  if (data.minPurchaseAmount !== undefined) updateData.minPurchaseAmount = data.minPurchaseAmount || "0.00";
+  if (data.maxDiscountAmount !== undefined) updateData.maxDiscountAmount = data.maxDiscountAmount || null;
   if (data.validFrom !== undefined) updateData.validFrom = data.validFrom ? new Date(data.validFrom) : null;
   if (data.validTill !== undefined) updateData.validTill = data.validTill ? new Date(data.validTill) : null;
   if (data.usageLimitTotal !== undefined) updateData.usageLimitTotal = data.usageLimitTotal;

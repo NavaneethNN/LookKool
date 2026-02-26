@@ -58,6 +58,9 @@ export async function addLoyaltyPoints(params: {
   if (!params.userId || !params.points || params.points <= 0) {
     throw new Error("Invalid parameters");
   }
+  if (!Number.isInteger(params.points)) {
+    throw new Error("Points must be a whole number");
+  }
   if (!params.description?.trim()) {
     throw new Error("Description is required");
   }
@@ -92,6 +95,12 @@ export async function deductLoyaltyPoints(params: {
 
   if (!params.userId || !params.points || params.points <= 0) {
     throw new Error("Invalid parameters");
+  }
+  if (!Number.isInteger(params.points)) {
+    throw new Error("Points must be a whole number");
+  }
+  if (!params.description?.trim()) {
+    throw new Error("Description is required");
   }
 
   // Check current balance
@@ -171,6 +180,9 @@ export async function deductStoreCredit(params: {
   if (!params.userId || !params.amount || params.amount <= 0) {
     throw new Error("Invalid parameters");
   }
+  if (!params.description?.trim()) {
+    throw new Error("Description is required");
+  }
 
   const [user] = await db
     .select({ creditBalance: users.creditBalance })
@@ -212,6 +224,10 @@ export async function awardPointsForPurchase(params: {
   billTotal: number;
   referenceId: string;
 }) {
+  // Validate inputs (internal function but exported as server action)
+  if (!params.userId || typeof params.userId !== "string") return;
+  if (typeof params.billTotal !== "number" || isNaN(params.billTotal) || params.billTotal <= 0) return;
+
   const points = Math.floor((params.billTotal / 100) * POINTS_PER_100);
   if (points <= 0) return;
 
@@ -244,6 +260,13 @@ export async function redeemLoyaltyPoints(params: {
   points: number;
   referenceId: string;
 }) {
+  if (!params.userId || typeof params.userId !== "string") {
+    throw new Error("Invalid user ID");
+  }
+  if (!params.points || !Number.isInteger(params.points) || params.points <= 0) {
+    throw new Error("Invalid points value");
+  }
+
   const [user] = await db
     .select({ loyaltyPoints: users.loyaltyPoints })
     .from(users)
@@ -283,6 +306,13 @@ export async function useStoreCredit(params: {
   amount: number;
   referenceId: string;
 }) {
+  if (!params.userId || typeof params.userId !== "string") {
+    throw new Error("Invalid user ID");
+  }
+  if (typeof params.amount !== "number" || isNaN(params.amount) || params.amount <= 0) {
+    throw new Error("Invalid amount");
+  }
+
   const [user] = await db
     .select({ creditBalance: users.creditBalance })
     .from(users)

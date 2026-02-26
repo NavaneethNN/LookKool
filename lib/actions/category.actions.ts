@@ -87,9 +87,18 @@ export async function updateCategory(
 ) {
   await requireAdmin();
 
+  const cleaned: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.categoryName !== undefined) cleaned.categoryName = data.categoryName;
+  if (data.slug !== undefined) cleaned.slug = data.slug;
+  if (data.description !== undefined) cleaned.description = data.description || null;
+  if (data.imageUrl !== undefined) cleaned.imageUrl = data.imageUrl || null;
+  if (data.parentCategoryId !== undefined) cleaned.parentCategoryId = data.parentCategoryId ?? null;
+  if (data.isActive !== undefined) cleaned.isActive = data.isActive;
+  if (data.sortOrder !== undefined) cleaned.sortOrder = data.sortOrder;
+
   await db
     .update(categories)
-    .set({ ...data, updatedAt: new Date() })
+    .set(cleaned)
     .where(eq(categories.categoryId, categoryId));
 
   revalidatePath("/studio/categories");

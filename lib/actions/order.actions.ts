@@ -199,7 +199,7 @@ export async function updateTrackingNumber(orderId: number, trackingNumber: stri
   await db
     .update(orders)
     .set({
-      trackingNumber,
+      trackingNumber: trackingNumber?.trim() || null,
       updatedAt: new Date(),
     })
     .where(eq(orders.orderId, orderId));
@@ -214,7 +214,7 @@ export async function updateOrderNotes(orderId: number, notes: string) {
   await db
     .update(orders)
     .set({
-      notes,
+      notes: notes?.trim() || null,
       updatedAt: new Date(),
     })
     .where(eq(orders.orderId, orderId));
@@ -466,7 +466,9 @@ export async function processRazorpayRefund(
 
 // Get invoice data for online orders (for PDF generation)
 export async function getOrderInvoiceData(orderId: number) {
-  await requireAdmin();
+  // Allow cashiers to generate invoices (called from invoice API route)
+  const { requireAdminOrCashier } = await import("@/lib/admin/require-admin");
+  await requireAdminOrCashier();
 
   const order = await db.query.orders.findFirst({
     where: eq(orders.orderId, orderId),

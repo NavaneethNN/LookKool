@@ -137,8 +137,8 @@ export async function createProduct(data: {
       slug: data.slug,
       description: data.description || null,
       categoryId: data.categoryId,
-      basePrice: data.basePrice,
-      mrp: data.mrp,
+      basePrice: data.basePrice !== "" ? data.basePrice : "0.00",
+      mrp: data.mrp !== "" ? data.mrp : data.basePrice !== "" ? data.basePrice : "0.00",
       productCode: data.productCode,
       material: data.material || null,
       fabricWeight: data.fabricWeight || null,
@@ -178,10 +178,28 @@ export async function updateProduct(
 ) {
   await requireAdmin();
 
+  const cleaned = { ...data } as Record<string, unknown>;
+  // Nullable text fields: empty string → null
+  for (const key of ["description", "material", "fabricWeight", "careInstructions", "origin", "detailHtml", "label"] as const) {
+    if (key in cleaned && cleaned[key] === "") cleaned[key] = null;
+  }
+  // NOT NULL decimal fields: empty string → remove (don't update)
+  for (const key of ["basePrice", "mrp"] as const) {
+    if (key in cleaned && cleaned[key] === "") delete cleaned[key];
+  }
+  // Integer fields: coerce to number
+  for (const key of ["categoryId", "priority"] as const) {
+    if (key in cleaned) {
+      const val = cleaned[key];
+      if (val === "" || val === null || val === undefined) delete cleaned[key];
+      else cleaned[key] = Number(val);
+    }
+  }
+
   await db
     .update(products)
     .set({
-      ...data,
+      ...cleaned,
       updatedAt: new Date(),
     })
     .where(eq(products.productId, productId));
@@ -331,9 +349,23 @@ export async function updateVariant(
 ) {
   await requireAdmin();
 
+  const cleaned = { ...data } as Record<string, unknown>;
+  // Nullable decimal fields: empty string → null
+  for (const key of ["price", "mrp", "costPrice"] as const) {
+    if (key in cleaned && cleaned[key] === "") cleaned[key] = null;
+  }
+  // NOT NULL decimal field: empty string → default
+  if ("priceModifier" in cleaned && cleaned.priceModifier === "") cleaned.priceModifier = "0.00";
+  // Nullable text fields: empty string → null
+  for (const key of ["sku", "hexcode", "barcode"] as const) {
+    if (key in cleaned && cleaned[key] === "") cleaned[key] = null;
+  }
+  // Integer field: coerce
+  if ("stockCount" in cleaned) cleaned.stockCount = Number(cleaned.stockCount) || 0;
+
   await db
     .update(productVariants)
-    .set({ ...data, updatedAt: new Date() })
+    .set({ ...cleaned, updatedAt: new Date() })
     .where(eq(productVariants.variantId, variantId));
 
   revalidatePath("/studio/products");
