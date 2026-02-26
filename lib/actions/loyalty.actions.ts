@@ -6,7 +6,7 @@ import {
   loyaltyTransactions,
 } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
-import { requireAdmin } from "@/lib/admin/require-admin";
+import { requireAdmin, requireAdminOrCashier } from "@/lib/admin/require-admin";
 import { revalidatePath } from "next/cache";
 
 // ─── Loyalty configuration ────────────────────────────────────
@@ -224,7 +224,9 @@ export async function awardPointsForPurchase(params: {
   billTotal: number;
   referenceId: string;
 }) {
-  // Validate inputs (internal function but exported as server action)
+  // Auth required — only admin/cashier can award points (called after bill creation)
+  await requireAdminOrCashier();
+
   if (!params.userId || typeof params.userId !== "string") return;
   if (typeof params.billTotal !== "number" || isNaN(params.billTotal) || params.billTotal <= 0) return;
 
@@ -260,6 +262,9 @@ export async function redeemLoyaltyPoints(params: {
   points: number;
   referenceId: string;
 }) {
+  // Auth required — only admin/cashier can redeem points on behalf of customer
+  await requireAdminOrCashier();
+
   if (!params.userId || typeof params.userId !== "string") {
     throw new Error("Invalid user ID");
   }
@@ -306,6 +311,9 @@ export async function useStoreCredit(params: {
   amount: number;
   referenceId: string;
 }) {
+  // Auth required — only admin/cashier can apply store credit on behalf of customer
+  await requireAdminOrCashier();
+
   if (!params.userId || typeof params.userId !== "string") {
     throw new Error("Invalid user ID");
   }

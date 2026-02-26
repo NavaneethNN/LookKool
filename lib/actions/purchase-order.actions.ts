@@ -124,8 +124,8 @@ export async function createPurchaseOrder(data: {
   let subtotal = 0;
   let gstTotal = 0;
   const itemsWithAmount = data.items.map(item => {
-    const costPrice = Number(item.costPrice) || 0;
-    const gstRate = Number(item.gstRate) || 0;
+    const costPrice = Number(item.costPrice);
+    const gstRate = Number(item.gstRate);
     const amount = item.orderedQty * costPrice;
     const gst = amount * gstRate / 100;
     subtotal += amount;
@@ -178,54 +178,66 @@ export async function receivePurchaseOrder(purchaseOrderId: number, receivedItem
 
   if (!po) throw new Error("Purchase order not found");
 
-  let allReceived = true;
-  let anyReceived = false;
-
+  // Validate received items
   for (const ri of receivedItems) {
-    const poItem = po.items.find(i => i.poItemId === ri.poItemId);
-    if (!poItem) continue;
-
-    const newReceivedQty = ri.receivedQty;
-    if (newReceivedQty > 0) anyReceived = true;
-    if (newReceivedQty < poItem.orderedQty) allReceived = false;
-
-    // Update PO item
-    await db.update(purchaseOrderItems).set({ receivedQty: newReceivedQty }).where(eq(purchaseOrderItems.poItemId, ri.poItemId));
-
-    // Add stock to variant
-    const qtyToAdd = newReceivedQty - (poItem.receivedQty ?? 0);
-    if (qtyToAdd > 0) {
-      // Update product variant stock
-      await db.update(productVariants).set({
-        stockCount: sql`${productVariants.stockCount} + ${qtyToAdd}`,
-        costPrice: poItem.costPrice,
-        updatedAt: new Date(),
-      }).where(eq(productVariants.variantId, poItem.variantId));
-
-      // Get updated stock count
-      const [updatedVariant] = await db.select({ stockCount: productVariants.stockCount }).from(productVariants).where(eq(productVariants.variantId, poItem.variantId));
-
-      // Log stock adjustment
-      await db.insert(stockAdjustments).values({
-        variantId: poItem.variantId,
-        type: "purchase_in",
-        quantityChange: qtyToAdd,
-        stockAfter: updatedVariant?.stockCount ?? 0,
-        referenceType: "purchase_order",
-        referenceId: purchaseOrderId,
-        reason: `PO ${po.poNumber} received`,
-        createdBy: admin.email,
-      });
+    if (!po.items.find(i => i.poItemId === ri.poItemId)) {
+      throw new Error(`PO item ${ri.poItemId} not found on this purchase order`);
+    }
+    if (typeof ri.receivedQty !== "number" || !Number.isInteger(ri.receivedQty) || ri.receivedQty < 0) {
+      throw new Error("Received quantity must be a non-negative integer");
     }
   }
 
-  // Update PO status
-  const newStatus = allReceived ? "Received" : anyReceived ? "Partial" : po.status;
-  await db.update(purchaseOrders).set({
-    status: newStatus,
-    receivedDate: allReceived ? new Date() : null,
-    updatedAt: new Date(),
-  }).where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
+  // Wrap all stock + status updates in a transaction for atomicity
+  await db.transaction(async (tx) => {
+    let allReceived = true;
+    let anyReceived = false;
+
+    for (const ri of receivedItems) {
+      const poItem = po.items.find(i => i.poItemId === ri.poItemId)!;
+
+      const newReceivedQty = ri.receivedQty;
+      if (newReceivedQty > 0) anyReceived = true;
+      if (newReceivedQty < poItem.orderedQty) allReceived = false;
+
+      // Update PO item
+      await tx.update(purchaseOrderItems).set({ receivedQty: newReceivedQty }).where(eq(purchaseOrderItems.poItemId, ri.poItemId));
+
+      // Add stock to variant
+      const qtyToAdd = newReceivedQty - (poItem.receivedQty ?? 0);
+      if (qtyToAdd > 0) {
+        // Update product variant stock
+        await tx.update(productVariants).set({
+          stockCount: sql`${productVariants.stockCount} + ${qtyToAdd}`,
+          costPrice: poItem.costPrice,
+          updatedAt: new Date(),
+        }).where(eq(productVariants.variantId, poItem.variantId));
+
+        // Get updated stock count
+        const [updatedVariant] = await tx.select({ stockCount: productVariants.stockCount }).from(productVariants).where(eq(productVariants.variantId, poItem.variantId));
+
+        // Log stock adjustment
+        await tx.insert(stockAdjustments).values({
+          variantId: poItem.variantId,
+          type: "purchase_in",
+          quantityChange: qtyToAdd,
+          stockAfter: updatedVariant?.stockCount ?? 0,
+          referenceType: "purchase_order",
+          referenceId: purchaseOrderId,
+          reason: `PO ${po.poNumber} received`,
+          createdBy: admin.email,
+        });
+      }
+    }
+
+    // Update PO status
+    const newStatus = allReceived ? "Received" : anyReceived ? "Partial" : po.status;
+    await tx.update(purchaseOrders).set({
+      status: newStatus,
+      receivedDate: allReceived ? new Date() : null,
+      updatedAt: new Date(),
+    }).where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
+  });
 
   revalidatePath("/studio/purchases");
   revalidatePath("/studio/inventory");

@@ -193,13 +193,30 @@ export async function updateCoupon(
     .set(updateData)
     .where(eq(coupons.couponId, couponId));
 
-  // Sync product/category scope
-  if (data.appliesToAllProducts !== undefined) {
+  // Sync product/category scope when the flag or scope arrays are provided
+  const shouldSyncScope =
+    data.appliesToAllProducts !== undefined ||
+    data.productIds !== undefined ||
+    data.categoryIds !== undefined;
+
+  if (shouldSyncScope) {
+    // Resolve whether coupon applies to all products
+    let appliesToAll = data.appliesToAllProducts;
+    if (appliesToAll === undefined) {
+      // Fetch current value from DB if not provided
+      const [existing] = await db
+        .select({ appliesToAllProducts: coupons.appliesToAllProducts })
+        .from(coupons)
+        .where(eq(coupons.couponId, couponId))
+        .limit(1);
+      appliesToAll = existing?.appliesToAllProducts ?? true;
+    }
+
     // Clear old junction rows
     await db.delete(couponProducts).where(eq(couponProducts.couponId, couponId));
     await db.delete(couponCategories).where(eq(couponCategories.couponId, couponId));
 
-    if (!data.appliesToAllProducts) {
+    if (!appliesToAll) {
       if (data.productIds && data.productIds.length > 0) {
         await db.insert(couponProducts).values(
           data.productIds.map((pid) => ({

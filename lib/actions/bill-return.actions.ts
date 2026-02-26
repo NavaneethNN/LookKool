@@ -53,38 +53,43 @@ export async function createBillReturn(data: {
     throw new Error("Invalid refund amount");
   }
 
-  const [billReturn] = await db.insert(billReturns).values({
-    originalBillId: data.originalBillId,
-    returnType: data.returnType,
-    returnedItems: JSON.stringify(data.returnedItems),
-    refundAmount: data.refundAmount,
-    exchangeBillId: data.exchangeBillId || null,
-    reason: data.reason || null,
-    processedBy: admin.email,
-  }).returning();
+  // Wrap return creation + stock restoration in a transaction for atomicity
+  const billReturn = await db.transaction(async (tx) => {
+    const [br] = await tx.insert(billReturns).values({
+      originalBillId: data.originalBillId,
+      returnType: data.returnType,
+      returnedItems: JSON.stringify(data.returnedItems),
+      refundAmount: data.refundAmount,
+      exchangeBillId: data.exchangeBillId || null,
+      reason: data.reason || null,
+      processedBy: admin.email,
+    }).returning();
 
-  // Restore stock for returned items
-  for (const item of data.returnedItems) {
-    if (item.variantId) {
-      await db.update(productVariants).set({
-        stockCount: sql`${productVariants.stockCount} + ${item.quantity}`,
-        updatedAt: new Date(),
-      }).where(eq(productVariants.variantId, item.variantId));
+    // Restore stock for returned items
+    for (const item of data.returnedItems) {
+      if (item.variantId) {
+        await tx.update(productVariants).set({
+          stockCount: sql`${productVariants.stockCount} + ${item.quantity}`,
+          updatedAt: new Date(),
+        }).where(eq(productVariants.variantId, item.variantId));
 
-      const [updated] = await db.select({ stockCount: productVariants.stockCount }).from(productVariants).where(eq(productVariants.variantId, item.variantId));
+        const [updated] = await tx.select({ stockCount: productVariants.stockCount }).from(productVariants).where(eq(productVariants.variantId, item.variantId));
 
-      await db.insert(stockAdjustments).values({
-        variantId: item.variantId,
-        type: data.returnType === "exchange" ? "exchange_in" : "return_in",
-        quantityChange: item.quantity,
-        stockAfter: updated?.stockCount ?? 0,
-        referenceType: "bill_return",
-        referenceId: billReturn.billReturnId,
-        reason: `${data.returnType} from bill #${data.originalBillId}`,
-        createdBy: admin.email,
-      });
+        await tx.insert(stockAdjustments).values({
+          variantId: item.variantId,
+          type: data.returnType === "exchange" ? "exchange_in" : "return_in",
+          quantityChange: item.quantity,
+          stockAfter: updated?.stockCount ?? 0,
+          referenceType: "bill_return",
+          referenceId: br.billReturnId,
+          reason: `${data.returnType} from bill #${data.originalBillId}`,
+          createdBy: admin.email,
+        });
+      }
     }
-  }
+
+    return br;
+  });
 
   revalidatePath("/studio/billing");
   return { billReturnId: billReturn.billReturnId, success: true };

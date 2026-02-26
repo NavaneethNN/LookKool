@@ -35,32 +35,40 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
-      await sendEmail({
-        to: [{ email: user.email, name: user.name }],
-        subject: "Reset your password",
-        htmlContent: `
-          <p>Hi ${user.name},</p>
-          <p>Click the link below to reset your password:</p>
-          <p><a href="${url}">${url}</a></p>
-          <p>This link will expire in 1 hour.</p>
-        `,
-      });
+      try {
+        await sendEmail({
+          to: [{ email: user.email, name: user.name }],
+          subject: "Reset your password",
+          htmlContent: `
+            <p>Hi ${user.name},</p>
+            <p>Click the link below to reset your password:</p>
+            <p><a href="${url}">${url}</a></p>
+            <p>This link will expire in 1 hour.</p>
+          `,
+        });
+      } catch (err) {
+        console.error("Failed to send reset password email:", err);
+      }
     },
   },
 
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
-      await sendEmail({
-        to: [{ email: user.email, name: user.name }],
-        subject: "Verify your email address",
-        htmlContent: `
-          <p>Hi ${user.name},</p>
-          <p>Click the link below to verify your email:</p>
-          <p><a href="${url}">${url}</a></p>
-          <p>This link will expire in 24 hours.</p>
-        `,
-      });
+      try {
+        await sendEmail({
+          to: [{ email: user.email, name: user.name }],
+          subject: "Verify your email address",
+          htmlContent: `
+            <p>Hi ${user.name},</p>
+            <p>Click the link below to verify your email:</p>
+            <p><a href="${url}">${url}</a></p>
+            <p>This link will expire in 24 hours.</p>
+          `,
+        });
+      } catch (err) {
+        console.error("Failed to send verification email:", err);
+      }
     },
   },
 
@@ -74,15 +82,19 @@ export const auth = betterAuth({
   plugins: [
     magicLink({
       sendMagicLink: async ({ email, url }) => {
-        await sendEmail({
-          to: [{ email }],
-          subject: "Your sign-in link",
-          htmlContent: `
-            <p>Click the link below to sign in:</p>
-            <p><a href="${url}">${url}</a></p>
-            <p>This link will expire in 5 minutes.</p>
-          `,
-        });
+        try {
+          await sendEmail({
+            to: [{ email }],
+            subject: "Your sign-in link",
+            htmlContent: `
+              <p>Click the link below to sign in:</p>
+              <p><a href="${url}">${url}</a></p>
+              <p>This link will expire in 5 minutes.</p>
+            `,
+          });
+        } catch (err) {
+          console.error("Failed to send magic link email:", err);
+        }
       },
     }),
   ],

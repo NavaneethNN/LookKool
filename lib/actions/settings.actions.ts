@@ -175,7 +175,7 @@ export async function upsertStoreSettings(data: {
       .set({
         ...safeFields,
         ...nullableFields,
-        nextInvoiceNumber: typeof data.nextInvoiceNumber === "number" && data.nextInvoiceNumber > 0
+        nextInvoiceNumber: typeof data.nextInvoiceNumber === "number" && Number.isInteger(data.nextInvoiceNumber) && data.nextInvoiceNumber > 0
           ? data.nextInvoiceNumber
           : undefined,
         updatedAt: new Date(),
@@ -186,7 +186,7 @@ export async function upsertStoreSettings(data: {
       ...safeFields,
       ...nullableFields,
       nextInvoiceNumber: typeof data.nextInvoiceNumber === "number" && data.nextInvoiceNumber > 0
-        ? data.nextInvoiceNumber
+        ? Math.floor(data.nextInvoiceNumber)
         : 1,
     });
   }

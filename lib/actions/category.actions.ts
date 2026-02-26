@@ -63,7 +63,7 @@ export async function createCategory(data: {
       slug: data.slug,
       description: data.description || null,
       imageUrl: data.imageUrl || null,
-      parentCategoryId: data.parentCategoryId || null,
+      parentCategoryId: data.parentCategoryId ?? null,
       isActive: data.isActive ?? true,
       sortOrder: data.sortOrder ?? 99,
     });

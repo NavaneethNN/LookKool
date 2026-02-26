@@ -83,6 +83,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Store Razorpay order ID on our DB order for verification lookup
+    await db
+      .update(orders)
+      .set({ razorpayOrderId: razorpayOrder.id, updatedAt: new Date() })
+      .where(eq(orders.orderId, orderId));
+
     return NextResponse.json({
       id: razorpayOrder.id,
       amount: razorpayOrder.amount,

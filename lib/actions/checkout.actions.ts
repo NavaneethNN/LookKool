@@ -294,7 +294,7 @@ export async function validateCoupon(
 
   // Never more than eligible subtotal, and ensure non-negative
   discount = Math.max(0, Math.min(discount, eligibleSubtotal));
-  discount = Math.round(discount * 100) / 100;
+  discount = parseFloat(discount.toFixed(2));
 
   return {
     valid: true,
