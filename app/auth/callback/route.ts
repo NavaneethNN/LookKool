@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { sendWelcomeEmail } from "@/lib/email/brevo";
+import { sendWelcomeEmail } from "@/lib/email";
 
 /**
  * GET /auth/callback

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart-store";
@@ -98,6 +98,21 @@ export function Navbar({ siteConfig }: NavbarProps) {
               )}
             </Link>
           </Button>
+          {mounted && (
+            user ? (
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/account" aria-label="Account">
+                  <User className="h-5 w-5" />
+                </Link>
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/sign-in" aria-label="Sign In">
+                  <User className="h-5 w-5" />
+                </Link>
+              </Button>
+            )
+          )}
           <MobileMenu
             open={open}
             onOpenChange={setOpen}

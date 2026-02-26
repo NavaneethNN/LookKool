@@ -1,5 +1,6 @@
 ﻿import { db } from "@/db";
 import { storeSettings } from "@/db/schema";
+import { sendEmail } from "./send";
 
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
@@ -64,7 +65,7 @@ interface SendEmailOptions {
   textContent?: string;
 }
 
-export async function sendEmail(options: SendEmailOptions) {
+export async function sendEmailViaBravo(options: SendEmailOptions) {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
     console.error("[Brevo] BREVO_API_KEY is not set â€” skipping email");

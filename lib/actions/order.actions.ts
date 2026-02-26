@@ -12,7 +12,7 @@ import {
 import { eq, desc, sql, count, and, ilike, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/require-admin";
-import { sendShippingUpdate, sendReturnStatusEmail } from "@/lib/email/brevo";
+import { sendShippingUpdate, sendReturnStatusEmail } from "@/lib/email";
 import { createNotification } from "@/lib/actions/notification.actions";
 import { escapeIlike } from "./_helpers";
 import { getPolicySettings } from "./settings.actions";

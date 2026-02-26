@@ -62,9 +62,12 @@ export async function signUpAction(data: {
   });
 
   if (error) {
-    const safeMessage = error.message.includes("already registered")
-      ? "An account with this email already exists"
-      : "Sign up failed. Please try again.";
+    let safeMessage = "Sign up failed. Please try again.";
+    if (error.message.includes("already registered")) {
+      safeMessage = "An account with this email already exists";
+    } else if (error.message.includes("rate limit") || (error as any).code === "over_email_send_rate_limit") {
+      safeMessage = "Too many sign-up attempts. Please try again in a few minutes.";
+    }
     return { success: false, error: safeMessage };
   }
 

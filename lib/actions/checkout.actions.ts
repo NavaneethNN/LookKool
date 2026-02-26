@@ -18,7 +18,7 @@ import {
 } from "@/db/schema";
 import { eq, and, sql, asc, count, inArray } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { sendOrderConfirmation } from "@/lib/email/brevo";
+import { sendOrderConfirmation } from "@/lib/email";
 import { createNotification, notifyAdmins } from "@/lib/actions/notification.actions";
 import crypto from "crypto";
 
