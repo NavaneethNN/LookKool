@@ -5,7 +5,7 @@ import { useWishlistStore } from "@/lib/stores/wishlist-store";
 import {
   getTrendingProducts,
   getFrequentlyBoughtTogether,
-} from "@/lib/actions/recommendation-actions";
+} from "@/lib/actions/recommendation.actions";
 import { ProductRecommendationStrip } from "./recommendation-strip";
 import { RecentlyViewed } from "./recently-viewed";
 import { TrendingUp, Sparkles } from "lucide-react";

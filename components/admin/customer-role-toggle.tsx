@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateUserRole } from "@/lib/actions/admin-actions";
+import { updateUserRole } from "@/lib/actions/customer.actions";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

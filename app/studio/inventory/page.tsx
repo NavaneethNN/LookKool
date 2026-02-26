@@ -4,7 +4,7 @@ import {
   getInventoryOverview,
   getLowStockItems,
   getStockAdjustments,
-} from "@/lib/actions/billing-actions";
+} from "@/lib/actions/inventory.actions";
 
 export default async function InventoryPage() {
   const [overview, lowStock, adjustments] = await Promise.all([

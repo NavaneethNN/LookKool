@@ -25,7 +25,7 @@ import {
   createSupplier,
   updateSupplier,
   deleteSupplier,
-} from "@/lib/actions/billing-actions";
+} from "@/lib/actions/supplier.actions";
 
 type Supplier = {
   supplierId: number;

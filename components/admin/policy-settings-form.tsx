@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { savePolicySettings } from "@/lib/actions/admin-actions";
+import { savePolicySettings } from "@/lib/actions/settings.actions";
 
 export type PolicySettingsData = {
   returnPolicy: string;

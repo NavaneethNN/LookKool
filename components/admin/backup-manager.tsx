@@ -14,7 +14,7 @@ import {
   Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getBackupData, getBackupStats } from "@/lib/actions/billing-actions";
+import { getBackupData, getBackupStats } from "@/lib/actions/backup.actions";
 
 type Stats = Awaited<ReturnType<typeof getBackupStats>>;
 

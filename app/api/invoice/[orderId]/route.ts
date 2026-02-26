@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrderInvoiceData, getStoreSettings } from "@/lib/actions/admin-actions";
+import { getOrderInvoiceData } from "@/lib/actions/order.actions";
+import { getStoreSettings } from "@/lib/actions/settings.actions";
 import { generateInvoiceHTML, buildLayoutConfig } from "@/lib/invoice-template";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/db";

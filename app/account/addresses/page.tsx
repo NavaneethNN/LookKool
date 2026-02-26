@@ -19,7 +19,7 @@ import {
   getAddresses,
   deleteAddress,
   setDefaultAddress,
-} from "@/lib/actions/account-actions";
+} from "@/lib/actions/account.actions";
 import { AddressForm } from "./address-form";
 
 interface Address {

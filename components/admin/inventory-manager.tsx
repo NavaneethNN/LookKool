@@ -35,8 +35,8 @@ import {
   getLowStockItems,
   getStockAdjustments,
   createStockAdjustment,
-} from "@/lib/actions/billing-actions";
-import { searchProductsForBilling } from "@/lib/actions/admin-actions";
+} from "@/lib/actions/inventory.actions";
+import { searchProductsForBilling } from "@/lib/actions/product.actions";
 
 // Types matching actual server action returns
 type OverviewData = Awaited<ReturnType<typeof getInventoryOverview>>;

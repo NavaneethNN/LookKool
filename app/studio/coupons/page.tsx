@@ -1,6 +1,6 @@
-import { getAdminCoupons } from "@/lib/actions/admin-actions";
+import { getAdminCoupons } from "@/lib/actions/coupon.actions";
 import { PageHeader } from "@/components/admin/page-header";
-import { CouponActions } from "@/components/admin/coupon-actions";
+import { CouponActions } from "@/components/admin/coupons/coupon-manager";
 import {
   Table,
   TableBody,

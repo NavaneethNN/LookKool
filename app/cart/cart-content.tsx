@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/lib/stores/cart-store";
-import { validateCartStock } from "@/lib/actions/checkout-actions";
+import { validateCartStock } from "@/lib/actions/checkout.actions";
 import { toast } from "sonner";
 
 export function CartContent({

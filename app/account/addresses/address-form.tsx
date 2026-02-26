@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { addAddress, updateAddress } from "@/lib/actions/account-actions";
+import { addAddress, updateAddress } from "@/lib/actions/account.actions";
 
 const INDIAN_STATES = [
   "Andhra Pradesh",

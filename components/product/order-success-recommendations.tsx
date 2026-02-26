@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getTrendingProducts, getNewArrivals } from "@/lib/actions/recommendation-actions";
+import { getTrendingProducts, getNewArrivals } from "@/lib/actions/recommendation.actions";
 import { ProductRecommendationStrip } from "./recommendation-strip";
 import { RecentlyViewed } from "./recently-viewed";
 import { TrendingUp, Sparkles } from "lucide-react";

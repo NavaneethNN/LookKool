@@ -1,4 +1,4 @@
-import { getAdminOrders } from "@/lib/actions/admin-actions";
+import { getAdminOrders } from "@/lib/actions/order.actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import Link from "next/link";

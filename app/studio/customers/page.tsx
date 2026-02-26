@@ -1,4 +1,4 @@
-import { getAdminCustomers } from "@/lib/actions/admin-actions";
+import { getAdminCustomers } from "@/lib/actions/customer.actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import Link from "next/link";

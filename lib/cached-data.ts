@@ -26,7 +26,7 @@ import {
   getSimilarProducts,
   getFrequentlyBoughtTogether,
   getPopularInCategory,
-} from "@/lib/actions/recommendation-actions";
+} from "@/lib/actions/recommendation.actions";
 
 // ═══════════════════════════════════════════════════════════════
 // CATEGORIES

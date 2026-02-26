@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { submitReturnRequest } from "@/lib/actions/return-actions";
+import { submitReturnRequest } from "@/lib/actions/return.actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

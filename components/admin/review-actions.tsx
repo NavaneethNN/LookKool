@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { toggleReviewApproval, deleteReview } from "@/lib/actions/admin-actions";
+import { toggleReviewApproval, deleteReview } from "@/lib/actions/review-admin.actions";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";

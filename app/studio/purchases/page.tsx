@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/admin/page-header";
-import { PurchaseOrdersList } from "@/components/admin/purchase-orders-list";
+import { PurchaseOrdersList } from "@/components/admin/purchases/purchase-orders-list";
 
 export default function PurchasesPage() {
   return (

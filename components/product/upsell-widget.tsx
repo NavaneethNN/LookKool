@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Flame, Users, Sparkles, TrendingUp, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/lib/stores/cart-store";
-import { getUpsellProducts } from "@/lib/actions/recommendation-actions";
-import type { UpsellProduct } from "@/lib/actions/recommendation-actions";
+import { getUpsellProducts } from "@/lib/actions/recommendation.actions";
+import type { UpsellProduct } from "@/lib/actions/recommendation.actions";
 
 // ── Psychology-driven messaging ─────────────────────────────
 

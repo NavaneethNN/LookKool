@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/admin/page-header";
 import { BackupManager } from "@/components/admin/backup-manager";
-import { getBackupStats } from "@/lib/actions/billing-actions";
+import { getBackupStats } from "@/lib/actions/backup.actions";
 
 export default async function BackupPage() {
   const stats = await getBackupStats();

@@ -1,4 +1,4 @@
-import { getAdminReviews } from "@/lib/actions/admin-actions";
+import { getAdminReviews } from "@/lib/actions/review-admin.actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { ReviewActions } from "@/components/admin/review-actions";
 import Link from "next/link";

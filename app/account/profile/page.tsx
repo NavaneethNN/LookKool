@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { getProfile, updateProfile } from "@/lib/actions/account-actions";
+import { getProfile, updateProfile } from "@/lib/actions/account.actions";
 
 export default function ProfilePage() {
   const router = useRouter();

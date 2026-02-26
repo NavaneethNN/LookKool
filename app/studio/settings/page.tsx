@@ -1,9 +1,6 @@
-import {
-  getDeliverySettings,
-  getNewsletterSubscribers,
-  getStoreSettings,
-  getActiveCategoryList,
-} from "@/lib/actions/admin-actions";
+import { getDeliverySettings, getStoreSettings } from "@/lib/actions/settings.actions";
+import { getNewsletterSubscribers } from "@/lib/actions/order.actions";
+import { getActiveCategoryList } from "@/lib/actions/category.actions";
 import { getSiteConfigUncached } from "@/lib/site-config";
 import { PageHeader } from "@/components/admin/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,8 +14,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DeliverySettingForm } from "@/components/admin/delivery-setting-form";
-import { StoreSettingsForm } from "@/components/admin/store-settings-form";
-import { SiteAppearanceForm } from "@/components/admin/site-appearance-form";
+import { StoreSettingsForm } from "@/components/admin/settings/store-settings-form";
+import { SiteAppearanceForm } from "@/components/admin/appearance/site-appearance-form";
 import { PolicySettingsForm } from "@/components/admin/policy-settings-form";
 
 export default async function SettingsPage() {

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { cancelConfirmedOrder } from "@/lib/actions/checkout-actions";
+import { cancelConfirmedOrder } from "@/lib/actions/checkout.actions";
 
 export function CancelOrderButton({ orderId }: { orderId: number }) {
   const router = useRouter();

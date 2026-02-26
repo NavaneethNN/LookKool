@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRecentlyViewedStore } from "@/lib/stores/recently-viewed-store";
-import { getProductsByIds } from "@/lib/actions/recommendation-actions";
+import { getProductsByIds } from "@/lib/actions/recommendation.actions";
 import { ProductRecommendationStrip } from "./recommendation-strip";
 import { Clock } from "lucide-react";
-import type { RecommendedProduct } from "@/lib/actions/recommendation-actions";
+import type { RecommendedProduct } from "@/lib/actions/recommendation.actions";
 
 interface RecentlyViewedProps {
   /** Exclude these product IDs (e.g. the current product page) */

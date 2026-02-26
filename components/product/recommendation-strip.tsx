@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { ProductCard } from "@/components/product/product-card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { RecommendedProduct } from "@/lib/actions/recommendation-actions";
+import type { RecommendedProduct } from "@/lib/actions/recommendation.actions";
 
 interface ProductRecommendationStripProps {
   title: string;

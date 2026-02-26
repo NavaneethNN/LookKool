@@ -19,7 +19,7 @@ import {
   getVariantsForBarcodes,
   updateVariantBarcode,
   bulkGenerateBarcodes,
-} from "@/lib/actions/billing-actions";
+} from "@/lib/actions/inventory.actions";
 
 type VariantRow = {
   variantId: number;

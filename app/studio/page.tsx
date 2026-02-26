@@ -2,7 +2,7 @@ import {
   getDashboardStats,
   getRecentOrders,
   getRevenueChart,
-} from "@/lib/actions/admin-actions";
+} from "@/lib/actions/dashboard.actions";
 import { requireAdminOrCashier } from "@/lib/admin/require-admin";
 import { redirect } from "next/navigation";
 import { StatCard } from "@/components/admin/stat-card";

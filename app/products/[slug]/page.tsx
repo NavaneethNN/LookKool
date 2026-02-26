@@ -29,8 +29,12 @@ export const revalidate = 60;
 
 // Pre-generate all active product pages at build time
 export async function generateStaticParams() {
-  const rows = await getCachedProductSlugs();
-  return rows.map((row) => ({ slug: row.slug }));
+  try {
+    const rows = await getCachedProductSlugs();
+    return rows.map((row) => ({ slug: row.slug }));
+  } catch {
+    return [];
+  }
 }
 
 interface PageProps {

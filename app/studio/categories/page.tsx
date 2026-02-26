@@ -1,4 +1,4 @@
-import { getAdminCategories } from "@/lib/actions/admin-actions";
+import { getAdminCategories } from "@/lib/actions/category.actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { CategoryActions } from "@/components/admin/category-actions";

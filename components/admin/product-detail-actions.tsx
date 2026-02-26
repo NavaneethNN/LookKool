@@ -6,7 +6,7 @@ import {
   deleteProduct,
   duplicateProduct,
   toggleProductActive,
-} from "@/lib/actions/admin-actions";
+} from "@/lib/actions/product.actions";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

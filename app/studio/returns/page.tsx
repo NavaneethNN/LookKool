@@ -1,4 +1,4 @@
-import { getAdminReturns } from "@/lib/actions/admin-actions";
+import { getAdminReturns } from "@/lib/actions/order.actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { ReturnResolve } from "@/components/admin/return-resolve";

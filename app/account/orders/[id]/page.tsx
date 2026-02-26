@@ -21,7 +21,7 @@ import { orders } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { ReturnRequestForm } from "@/components/orders/return-request-form";
 import { CancelOrderButton } from "@/components/orders/cancel-order-button";
-import { getReturnRequestsForOrder } from "@/lib/actions/return-actions";
+import { getReturnRequestsForOrder } from "@/lib/actions/return.actions";
 import { getPublicSiteConfig } from "@/lib/site-config";
 import type { Metadata } from "next";
 

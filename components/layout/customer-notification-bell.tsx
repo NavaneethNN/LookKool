@@ -9,7 +9,7 @@ import {
   getUnreadNotificationCount,
   markNotificationRead,
   markAllNotificationsRead,
-} from "@/lib/actions/notification-actions";
+} from "@/lib/actions/notification.actions";
 import {
   DropdownMenu,
   DropdownMenuContent,

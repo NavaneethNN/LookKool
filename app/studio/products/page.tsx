@@ -1,9 +1,7 @@
-import {
-  getAdminProducts,
-  getAdminCategories,
-} from "@/lib/actions/admin-actions";
+import { getAdminProducts } from "@/lib/actions/product.actions";
+import { getAdminCategories } from "@/lib/actions/category.actions";
 import { PageHeader } from "@/components/admin/page-header";
-import { ProductsList } from "@/components/admin/products-list";
+import { ProductsList } from "@/components/admin/products/products-list";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 

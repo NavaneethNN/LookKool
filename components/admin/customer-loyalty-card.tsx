@@ -17,7 +17,7 @@ import {
   deductLoyaltyPoints,
   addStoreCredit,
   deductStoreCredit,
-} from "@/lib/actions/loyalty-actions";
+} from "@/lib/actions/loyalty.actions";
 
 interface LoyaltyData {
   user: {

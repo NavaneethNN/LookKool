@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Bell, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { subscribeToNewsletter } from "@/lib/actions/newsletter-actions";
+import { subscribeToNewsletter } from "@/lib/actions/newsletter.actions";
 
 export function NewsletterSection() {
   const [email, setEmail] = useState("");

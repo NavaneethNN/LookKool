@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { upsertDeliverySetting } from "@/lib/actions/admin-actions";
+import { upsertDeliverySetting } from "@/lib/actions/settings.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getOrders } from "@/lib/actions/checkout-actions";
+import { getOrders } from "@/lib/actions/checkout.actions";
 
 interface OrderItem {
   orderItemId: number;

@@ -5,11 +5,11 @@ import { useCartStore } from "@/lib/stores/cart-store";
 import {
   getFrequentlyBoughtTogether,
   getTrendingProducts,
-} from "@/lib/actions/recommendation-actions";
+} from "@/lib/actions/recommendation.actions";
 import { ProductRecommendationStrip } from "@/components/product/recommendation-strip";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { ShoppingBag, TrendingUp } from "lucide-react";
-import type { RecommendedProduct } from "@/lib/actions/recommendation-actions";
+import type { RecommendedProduct } from "@/lib/actions/recommendation.actions";
 
 export function CartRecommendations() {
   const { items } = useCartStore();

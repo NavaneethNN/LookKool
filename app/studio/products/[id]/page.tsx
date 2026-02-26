@@ -1,8 +1,5 @@
-import {
-  getAdminProduct,
-  getAdminCategories,
-  getProductStockSummary,
-} from "@/lib/actions/admin-actions";
+import { getAdminProduct, getProductStockSummary } from "@/lib/actions/product.actions";
+import { getAdminCategories } from "@/lib/actions/category.actions";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { ProductDetailActions } from "@/components/admin/product-detail-actions";
 import { notFound } from "next/navigation";
@@ -18,12 +15,12 @@ import {
 } from "lucide-react";
 
 const ProductForm = dynamic(
-  () => import("@/components/admin/product-form").then(m => m.ProductForm),
+  () => import("@/components/admin/products/product-form").then(m => m.ProductForm),
   { loading: () => <div className="animate-pulse rounded-xl border bg-white shadow-sm p-6 space-y-4">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 w-full rounded-lg bg-muted" />)}</div> }
 );
 
 const VariantManager = dynamic(
-  () => import("@/components/admin/variant-manager").then(m => m.VariantManager),
+  () => import("@/components/admin/variants/variant-manager").then(m => m.VariantManager),
   { loading: () => <div className="animate-pulse rounded-xl border bg-white shadow-sm p-6"><div className="h-8 w-48 rounded bg-muted mb-4" /><div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 w-full rounded-lg bg-muted" />)}</div></div> }
 );
 

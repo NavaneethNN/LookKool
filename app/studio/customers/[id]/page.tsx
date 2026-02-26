@@ -1,4 +1,4 @@
-import { getAdminCustomerDetail } from "@/lib/actions/admin-actions";
+import { getAdminCustomerDetail } from "@/lib/actions/customer.actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { CustomerRoleToggle } from "@/components/admin/customer-role-toggle";
