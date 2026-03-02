@@ -27,18 +27,19 @@ export const revalidate = 60;
 
 function SectionSkeleton({ rows = 1 }: { rows?: number }) {
   return (
-    <div className="container mx-auto px-4 py-8 animate-pulse">
-      <div className="h-7 w-40 rounded bg-muted mb-4" />
+    <div className="container mx-auto px-4 py-10 animate-pulse">
+      <div className="h-7 w-48 rounded-lg bg-muted mb-2" />
+      <div className="h-4 w-64 rounded bg-muted/70 mb-6" />
       {Array.from({ length: rows }).map((_, r) => (
         <div key={r} className="flex gap-4 overflow-hidden mb-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="min-w-[200px] flex-shrink-0 rounded-xl border bg-muted/30 p-4"
+              className="min-w-[200px] flex-shrink-0 rounded-2xl border border-border/40 bg-muted/20 p-4"
             >
-              <div className="mb-3 aspect-square rounded-lg bg-muted" />
-              <div className="mb-2 h-4 w-3/4 rounded bg-muted" />
-              <div className="h-4 w-1/2 rounded bg-muted" />
+              <div className="mb-3 aspect-[3/4] rounded-xl bg-muted/50" />
+              <div className="mb-2 h-4 w-3/4 rounded bg-muted/50" />
+              <div className="h-4 w-1/2 rounded bg-muted/50" />
             </div>
           ))}
         </div>
@@ -49,16 +50,20 @@ function SectionSkeleton({ rows = 1 }: { rows?: number }) {
 
 function CategorySkeleton() {
   return (
-    <div className="container mx-auto px-4 py-14 animate-pulse">
-      <div className="mb-10">
-        <div className="h-8 w-48 rounded-lg bg-muted" />
-        <div className="mt-2 h-5 w-64 rounded bg-muted" />
+    <div className="container mx-auto px-4 py-16 animate-pulse">
+      <div className="mb-12">
+        <div className="h-9 w-56 rounded-lg bg-muted" />
+        <div className="mt-2 h-5 w-72 rounded bg-muted/70" />
       </div>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex flex-col items-center rounded-2xl border bg-muted/30 p-8">
-            <div className="mb-4 h-14 w-14 rounded-xl bg-muted" />
-            <div className="h-5 w-24 rounded bg-muted" />
+          <div
+            key={i}
+            className="flex flex-col items-center rounded-2xl border border-border/40 bg-muted/20 p-8"
+          >
+            <div className="mb-5 h-16 w-16 rounded-2xl bg-muted/50" />
+            <div className="h-5 w-24 rounded bg-muted/50" />
+            <div className="mt-2 h-3 w-32 rounded bg-muted/30" />
           </div>
         ))}
       </div>
@@ -72,16 +77,21 @@ export default async function HomePage() {
   return (
     <>
       <HeroSection siteConfig={siteConfig} />
+
       <Suspense fallback={<CategorySkeleton />}>
         <FeaturedCategories />
       </Suspense>
+
       <Suspense fallback={<SectionSkeleton rows={3} />}>
         <HomeRecommendations />
       </Suspense>
+
       <FeaturesStrip />
-      <div className="container mx-auto px-4 py-8">
+
+      <div className="container mx-auto px-4 py-10">
         <RecentlyViewedHome />
       </div>
+
       <NewsletterSection />
     </>
   );

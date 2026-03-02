@@ -1,4 +1,13 @@
-import { Truck, ShieldCheck, RotateCcw, Headphones, type LucideIcon } from "lucide-react";
+"use client";
+
+import {
+  Truck,
+  ShieldCheck,
+  RotateCcw,
+  Headphones,
+  type LucideIcon,
+} from "lucide-react";
+import { StaggerChildren, StaggerItem } from "@/components/ui/motion";
 
 interface Feature {
   icon: LucideIcon;
@@ -31,21 +40,29 @@ const features: Feature[] = [
 
 export function FeaturesStrip() {
   return (
-    <section className="border-y bg-muted/40">
-      <div className="container mx-auto px-4 py-10 sm:py-14">
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+    <section className="border-y bg-gradient-to-r from-muted/30 via-muted/50 to-muted/30">
+      <div className="container mx-auto px-4 py-12 sm:py-16">
+        <StaggerChildren
+          className="grid grid-cols-2 gap-6 sm:gap-8 sm:grid-cols-4"
+          staggerDelay={0.1}
+        >
           {features.map((f) => (
-            <div key={f.title} className="flex flex-col items-center text-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                <f.icon className="h-5 w-5 text-primary" />
+            <StaggerItem
+              key={f.title}
+              className="group flex flex-col items-center text-center gap-3"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/10 transition-all duration-500 group-hover:bg-primary/15 group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:scale-110 group-hover:-translate-y-1">
+                <f.icon className="h-6 w-6 text-primary transition-transform duration-500 group-hover:scale-110" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold">{f.title}</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{f.description}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                  {f.description}
+                </p>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerChildren>
       </div>
     </section>
   );

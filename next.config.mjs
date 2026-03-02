@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Ensure framer-motion is properly bundled
+  transpilePackages: ["framer-motion"],
+
   // Supabase Storage images
   images: {
     remotePatterns: [

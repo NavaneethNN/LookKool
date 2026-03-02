@@ -32,13 +32,12 @@ export default async function CartPage() {
   const deliveryConfig = await getCachedDeliveryConfig();
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold sm:text-3xl mb-8">Shopping Cart</h1>
+    <main className="container mx-auto px-4 py-10">
+      <h1 className="text-2xl font-bold sm:text-3xl lg:text-4xl tracking-tight mb-8">
+        Shopping Cart
+      </h1>
       <CartContent deliveryConfig={deliveryConfig} />
-      <CartUpsell
-        variant="cart"
-        deliveryConfig={deliveryConfig}
-      />
+      <CartUpsell variant="cart" deliveryConfig={deliveryConfig} />
       <CartRecommendations />
     </main>
   );
