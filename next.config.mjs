@@ -58,16 +58,6 @@ const nextConfig = {
 
   // Minimize output
   poweredByHeader: false,
-
-  // Prevent the Router Cache from going stale at 5 minutes
-  // (default staleTimes.static = 300s causes RSC refetches that can
-  // conflict with in-flight server action calls → frozen UI)
-  experimental: {
-    staleTimes: {
-      dynamic: 30,
-      static: 180, // keep static Router Cache for 3 minutes, then soft-refresh
-    },
-  },
 };
 
 export default nextConfig;

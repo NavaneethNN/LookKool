@@ -24,7 +24,7 @@ export function SearchInput({
   className,
 }: SearchInputProps) {
   const [input, setInput] = useState(value);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Sync controlled value → local input
   useEffect(() => {

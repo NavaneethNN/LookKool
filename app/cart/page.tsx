@@ -8,16 +8,14 @@ const CartRecommendations = dynamic(
   () =>
     import("@/components/product/cart-recommendations").then(
       (mod) => mod.CartRecommendations
-    ),
-  { ssr: false }
+    )
 );
 
 const CartUpsell = dynamic(
   () =>
     import("@/components/product/upsell-widget").then(
       (mod) => mod.UpsellWidget
-    ),
-  { ssr: false }
+    )
 );
 
 export async function generateMetadata(): Promise<Metadata> {

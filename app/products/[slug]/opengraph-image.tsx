@@ -8,7 +8,8 @@ export const alt = "Product image";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default async function Image({ params }: { params: { slug: string } }) {
+export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const [[product], siteConfig] = await Promise.all([
     db
       .select({
@@ -18,7 +19,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
         label: products.label,
       })
       .from(products)
-      .where(eq(products.slug, params.slug))
+      .where(eq(products.slug, slug))
       .limit(1),
     getPublicSiteConfig(),
   ]);

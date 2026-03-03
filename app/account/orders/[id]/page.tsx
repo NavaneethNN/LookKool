@@ -25,12 +25,13 @@ import { getPublicSiteConfig } from "@/lib/site-config";
 import type { Metadata } from "next";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
   return {
-    title: `Order #${params.id}`,
+    title: `Order #${id}`,
   };
 }
 
@@ -56,7 +57,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
   const session = await requireAuthOrRedirect();
   const user = session.user;
 
-  const orderId = parseInt(params.id);
+  const { id } = await params;
+  const orderId = parseInt(id);
   if (isNaN(orderId)) notFound();
 
   const order = await db.query.orders.findFirst({

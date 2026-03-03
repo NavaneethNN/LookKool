@@ -69,7 +69,7 @@ export async function createCategory(data: {
     });
 
   revalidatePath("/studio/categories");
-  revalidateTag("categories");
+  revalidateTag("categories", "default");
   return { success: true };
 }
 
@@ -102,7 +102,7 @@ export async function updateCategory(
     .where(eq(categories.categoryId, categoryId));
 
   revalidatePath("/studio/categories");
-  revalidateTag("categories");
+  revalidateTag("categories", "default");
   return { success: true };
 }
 
@@ -130,6 +130,6 @@ export async function deleteCategory(categoryId: number) {
   await db.delete(categories).where(eq(categories.categoryId, categoryId));
 
   revalidatePath("/studio/categories");
-  revalidateTag("categories");
+  revalidateTag("categories", "default");
   return { success: true };
 }

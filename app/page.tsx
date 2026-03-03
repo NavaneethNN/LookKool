@@ -10,16 +10,14 @@ const NewsletterSection = dynamic(
   () =>
     import("@/components/home/newsletter-section").then(
       (mod) => mod.NewsletterSection
-    ),
-  { ssr: false }
+    )
 );
 
 const RecentlyViewedHome = dynamic(
   () =>
     import("@/components/product/recently-viewed").then(
       (mod) => mod.RecentlyViewed
-    ),
-  { ssr: false }
+    )
 );
 
 // Revalidate the homepage every 60 seconds

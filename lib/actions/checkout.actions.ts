@@ -604,7 +604,7 @@ export async function createOrder(input: CreateOrderInput) {
   }
 
   revalidatePath("/account/orders");
-  revalidateTag("products");
+  revalidateTag("products", "default");
 
   // ─── Send order confirmation email (non-blocking) ─────────
   try {

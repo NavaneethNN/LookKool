@@ -58,7 +58,7 @@ export async function toggleReviewApproval(reviewId: number, isApproved: boolean
     .where(eq(reviews.reviewId, reviewId));
 
   revalidatePath("/studio/reviews");
-  revalidateTag("products");
+  revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -68,6 +68,6 @@ export async function deleteReview(reviewId: number) {
   await db.delete(reviews).where(eq(reviews.reviewId, reviewId));
 
   revalidatePath("/studio/reviews");
-  revalidateTag("products");
+  revalidateTag("products", "default");
   return { success: true };
 }

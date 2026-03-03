@@ -105,6 +105,6 @@ export async function submitReview(formData: FormData) {
   });
 
   revalidatePath(`/products/${slug}`);
-  revalidateTag("products");
+  revalidateTag("products", "default");
   return { success: true };
 }

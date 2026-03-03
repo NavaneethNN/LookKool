@@ -7,8 +7,7 @@ const WishlistRecommendations = dynamic(
   () =>
     import("@/components/product/wishlist-recommendations").then(
       (mod) => mod.WishlistRecommendations
-    ),
-  { ssr: false }
+    )
 );
 
 export async function generateMetadata(): Promise<Metadata> {

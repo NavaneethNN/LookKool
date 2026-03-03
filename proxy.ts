@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 /**
- * Middleware
- * Cookie-only check (Edge-safe — no DB calls, no postgres driver).
+ * Proxy (renamed from middleware in Next.js 16)
+ * Cookie-only check — no DB calls, no postgres driver.
  * 1. Checks for Better Auth session cookie
  * 2. Protects /account/*, /checkout, /studio — redirects to /sign-in if no cookie
  * 3. Redirects signed-in users away from /sign-in, /sign-up
@@ -13,7 +13,7 @@ import { type NextRequest, NextResponse } from "next/server";
 const protectedRoutes = ["/account", "/checkout", "/studio"];
 const authRoutes = ["/sign-in", "/sign-up"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtected = protectedRoutes.some(

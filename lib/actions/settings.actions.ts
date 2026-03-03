@@ -55,7 +55,7 @@ export async function upsertDeliverySetting(data: {
   }
 
   revalidatePath("/studio/settings");
-  revalidateTag("delivery-config");
+  revalidateTag("delivery-config", "default");
   return { success: true };
 }
 
@@ -194,7 +194,7 @@ export async function upsertStoreSettings(data: {
   revalidatePath("/studio/settings");
   revalidatePath("/", "layout");
   // Bust cached site config so storefront picks up changes immediately
-  revalidateTag("site-config");
+  revalidateTag("site-config", "default");
   return { success: true };
 }
 
@@ -247,7 +247,7 @@ export async function savePolicySettings(data: {
   }
 
   revalidatePath("/studio/settings");
-  revalidateTag("site-config");
+  revalidateTag("site-config", "default");
   return { success: true };
 }
 
@@ -374,6 +374,6 @@ export async function upsertSiteAppearance(data: {
   // Revalidate storefront and admin settings
   revalidatePath("/", "layout");
   revalidatePath("/studio/settings");
-  revalidateTag("site-config");
+  revalidateTag("site-config", "default");
   return { success: true };
 }

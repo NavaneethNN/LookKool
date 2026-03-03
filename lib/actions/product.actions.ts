@@ -152,7 +152,7 @@ export async function createProduct(data: {
     .returning({ productId: products.productId });
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { productId: newProduct.productId };
 }
 
@@ -205,7 +205,7 @@ export async function updateProduct(
     .where(eq(products.productId, productId));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   revalidatePath(`/studio/products/${productId}`);
   return { success: true };
 }
@@ -225,7 +225,7 @@ export async function deleteProduct(productId: number) {
   await db.delete(products).where(eq(products.productId, productId));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -238,7 +238,7 @@ export async function toggleProductActive(productId: number, isActive: boolean) 
     .where(eq(products.productId, productId));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -297,7 +297,7 @@ export async function bulkUpdateStock(
   }
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true, updated: updates.length };
 }
 
@@ -369,7 +369,7 @@ export async function updateVariant(
     .where(eq(productVariants.variantId, variantId));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -388,7 +388,7 @@ export async function deleteVariant(variantId: number) {
   await db.delete(productVariants).where(eq(productVariants.variantId, variantId));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -416,7 +416,7 @@ export async function bulkDeleteVariants(variantIds: number[]) {
   await db.delete(productVariants).where(inArray(productVariants.variantId, variantIds));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true, deleted: variantIds.length };
 }
 
@@ -429,7 +429,7 @@ export async function updateStock(variantId: number, stockCount: number) {
     .where(eq(productVariants.variantId, variantId));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -469,7 +469,7 @@ export async function addVariantImage(
     });
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -479,7 +479,7 @@ export async function removeVariantImage(imageId: number) {
   await db.delete(productImages).where(eq(productImages.imageId, imageId));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -510,7 +510,7 @@ export async function setVariantPrimaryImage(
     .where(eq(productImages.imageId, imageId));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true };
 }
 
@@ -535,7 +535,7 @@ export async function bulkDeleteProducts(productIds: number[]) {
   await db.delete(products).where(inArray(products.productId, productIds));
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true, deleted: productIds.length };
 }
 
@@ -555,7 +555,7 @@ export async function bulkToggleProductsActive(
   }
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true, updated: productIds.length };
 }
 
@@ -573,7 +573,7 @@ export async function bulkUpdateProductCategory(
   }
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { success: true, updated: productIds.length };
 }
 
@@ -643,7 +643,7 @@ export async function duplicateProduct(productId: number) {
   }
 
   revalidatePath("/studio/products");
-    revalidateTag("products");
+    revalidateTag("products", "default");
   return { productId: newProduct.productId };
 }
 
